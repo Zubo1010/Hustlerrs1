@@ -32,7 +32,7 @@ const HustlerRegisterForm = () => {
     confirmPassword: '',
   });
 
-  const [markerPosition, setMarkerPosition] = useState([23.8103, 90.4125]); // Default to Dhaka
+  const [markerPosition, setMarkerPosition] = useState([23.8103, 90.4125]); // Default to Dhaka coordinates
   const [notification, setNotification] = useState('');
   const [error, setError] = useState('');
 
@@ -89,7 +89,7 @@ const HustlerRegisterForm = () => {
           latitude: parseFloat(result.lat),
           longitude: parseFloat(result.lon),
         }));
-        setMapCenter([parseFloat(result.lat), parseFloat(result.lon)]);
+        // No need to set mapCenter here, the MapContainer re-renders with markerPosition
         setMarkerPosition([parseFloat(result.lat), parseFloat(result.lon)]);
       } else {
         console.warn('No results found for the address');
