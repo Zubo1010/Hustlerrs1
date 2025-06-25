@@ -48,12 +48,9 @@ const HustlerRegisterForm = () => {
 
   const reverseGeocode = async (lat, lon) => {
     try {
-      const res = await axios.get('https://nominatim.openstreetmap.org/reverse', {
+      const res = await axios.get('/api/utils/reverse-geocode', {
         params: {
           lat,
-          lon,
-          format: 'json'
-        }
       });
       const displayAddress = res.data.display_name;
       setFormData(prev => ({

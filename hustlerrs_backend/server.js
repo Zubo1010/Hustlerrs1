@@ -45,6 +45,7 @@ const users = require('./routes/users');
 const reviewRoutes = require('./routes/reviewRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const hustlerApplicationRoutes = require('./routes/hustlerApplicationRoutes');
+const utilsRoutes = require('./routes/utilsRoutes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/jobs', jobRoutes);
@@ -56,6 +57,7 @@ app.use('/api/users', users);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/hustler-applications', hustlerApplicationRoutes);
+app.use('/api/utils', utilsRoutes);
 
 connectDB();
 
