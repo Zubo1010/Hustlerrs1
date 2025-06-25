@@ -106,14 +106,19 @@ exports.approveApplication = async (req, res) => {
                 phone: phone,
                 age,
                 location: address, // Use the application's address for the user's location
-                coordinates: {
-                    type: 'Point',
-                    coordinates: [longitude, latitude]
-                },
                 profilePicture: newProfilePicturePath,
             });
 
+            // Only include coordinates if both latitude and longitude are valid numbers
+            if (typeof latitude === 'number' && typeof longitude === 'number') {
+                newUser.coordinates = {
+                    type: 'Point',
+                    coordinates: [longitude, latitude]
+                };
+            }
+
             await newUser.save();
+
             await application.save();
 
             // TODO: Send email to the user with their login credentials
