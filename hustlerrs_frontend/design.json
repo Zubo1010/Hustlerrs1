@@ -1,0 +1,312 @@
+{
+    "designSystem": {
+      "name": "Modern Mobile App Design System",
+      "version": "1.0",
+      "description": "Clean, minimalist mobile-first design system with green accent theme"
+    },
+    "colorPalette": {
+      "primary": {
+        "green": "#4CAF50",
+        "greenLight": "#66BB6A",
+        "greenDark": "#388E3C",
+        "gradientGreen": "linear-gradient(135deg, #4CAF50, #66BB6A)"
+      },
+      "secondary": {
+        "orange": "#FF6B35",
+        "orangeLight": "#FF8A50"
+      },
+      "neutral": {
+        "white": "#FFFFFF",
+        "lightGray": "#F5F5F5",
+        "mediumGray": "#E0E0E0",
+        "darkGray": "#757575",
+        "charcoal": "#424242",
+        "backgroundMint": "#E8F5E8"
+      },
+      "system": {
+        "success": "#4CAF50",
+        "warning": "#FFC107",
+        "error": "#F44336",
+        "info": "#2196F3"
+      }
+    },
+    "typography": {
+      "fontFamily": {
+        "primary": "SF Pro Display, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif",
+        "fallback": "system-ui, sans-serif"
+      },
+      "fontSizes": {
+        "xs": "12px",
+        "sm": "14px",
+        "base": "16px",
+        "lg": "18px",
+        "xl": "20px",
+        "2xl": "24px",
+        "3xl": "30px"
+      },
+      "fontWeights": {
+        "normal": 400,
+        "medium": 500,
+        "semibold": 600,
+        "bold": 700
+      },
+      "lineHeights": {
+        "tight": 1.2,
+        "normal": 1.5,
+        "relaxed": 1.6
+      }
+    },
+    "spacing": {
+      "xs": "4px",
+      "sm": "8px",
+      "md": "16px",
+      "lg": "24px",
+      "xl": "32px",
+      "2xl": "48px",
+      "3xl": "64px"
+    },
+    "borderRadius": {
+      "sm": "4px",
+      "md": "8px",
+      "lg": "12px",
+      "xl": "16px",
+      "2xl": "24px",
+      "full": "9999px"
+    },
+    "shadows": {
+      "sm": "0 1px 3px rgba(0, 0, 0, 0.12)",
+      "md": "0 4px 6px rgba(0, 0, 0, 0.1)",
+      "lg": "0 10px 15px rgba(0, 0, 0, 0.1)",
+      "card": "0 2px 8px rgba(0, 0, 0, 0.08)"
+    },
+    "components": {
+      "buttons": {
+        "primary": {
+          "backgroundColor": "#4CAF50",
+          "color": "#FFFFFF",
+          "borderRadius": "full",
+          "padding": "12px 32px",
+          "fontSize": "16px",
+          "fontWeight": 600,
+          "minHeight": "48px",
+          "shadow": "sm",
+          "states": {
+            "hover": {
+              "backgroundColor": "#388E3C"
+            },
+            "active": {
+              "backgroundColor": "#2E7D32"
+            },
+            "disabled": {
+              "backgroundColor": "#E0E0E0",
+              "color": "#9E9E9E"
+            }
+          }
+        },
+        "secondary": {
+          "backgroundColor": "#FFFFFF",
+          "color": "#4CAF50",
+          "border": "2px solid #4CAF50",
+          "borderRadius": "full",
+          "padding": "12px 32px",
+          "fontSize": "16px",
+          "fontWeight": 600,
+          "minHeight": "48px"
+        },
+        "tag": {
+          "backgroundColor": "#4CAF50",
+          "color": "#FFFFFF",
+          "borderRadius": "full",
+          "padding": "8px 16px",
+          "fontSize": "14px",
+          "fontWeight": 500,
+          "display": "inline-block"
+        }
+      },
+      "cards": {
+        "default": {
+          "backgroundColor": "#FFFFFF",
+          "borderRadius": "xl",
+          "padding": "24px",
+          "shadow": "card",
+          "border": "none"
+        },
+        "onboarding": {
+          "backgroundColor": "#FFFFFF",
+          "borderRadius": "2xl",
+          "padding": "32px 24px",
+          "shadow": "lg",
+          "textAlign": "center",
+          "minHeight": "400px"
+        },
+        "feature": {
+          "backgroundColor": "#4CAF50",
+          "borderRadius": "2xl",
+          "padding": "24px",
+          "color": "#FFFFFF",
+          "minHeight": "300px"
+        }
+      },
+      "inputs": {
+        "textField": {
+          "backgroundColor": "#FFFFFF",
+          "border": "1px solid #E0E0E0",
+          "borderRadius": "lg",
+          "padding": "12px 16px",
+          "fontSize": "16px",
+          "minHeight": "48px",
+          "states": {
+            "focus": {
+              "borderColor": "#4CAF50",
+              "boxShadow": "0 0 0 3px rgba(76, 175, 80, 0.1)"
+            }
+          }
+        },
+        "select": {
+          "backgroundColor": "#FFFFFF",
+          "border": "1px solid #E0E0E0",
+          "borderRadius": "lg",
+          "padding": "12px 16px",
+          "fontSize": "16px",
+          "minHeight": "48px"
+        }
+      },
+      "navigation": {
+        "pill": {
+          "backgroundColor": "#4CAF50",
+          "color": "#FFFFFF",
+          "borderRadius": "full",
+          "padding": "8px 16px",
+          "fontSize": "14px",
+          "fontWeight": 500,
+          "margin": "4px"
+        }
+      },
+      "illustrations": {
+        "style": "flat",
+        "colorScheme": ["#FF6B35", "#4CAF50", "#2196F3"],
+        "characteristics": [
+          "Simple geometric shapes",
+          "Flat design with minimal shadows",
+          "Consistent character style",
+          "Orange clothing/accents on characters",
+          "Clean line art"
+        ]
+      }
+    },
+    "layouts": {
+      "mobileFirst": {
+        "maxWidth": "375px",
+        "padding": "16px",
+        "spacing": "24px"
+      },
+      "grid": {
+        "columns": 12,
+        "gutter": "16px",
+        "margin": "16px"
+      },
+      "containers": {
+        "page": {
+          "backgroundColor": "#E8F5E8",
+          "minHeight": "100vh",
+          "padding": "16px"
+        },
+        "section": {
+          "marginBottom": "32px"
+        }
+      }
+    },
+    "patterns": {
+      "onboardingFlow": {
+        "structure": [
+          "Welcome/intro screen",
+          "Feature highlights (3-4 screens)",
+          "Account setup",
+          "Success confirmation"
+        ],
+        "characteristics": [
+          "Central illustration",
+          "Concise headline",
+          "Brief description",
+          "Single primary action",
+          "Progress indicators"
+        ]
+      },
+      "cardLayouts": {
+        "twoColumnGrid": {
+          "gap": "16px",
+          "cardAspectRatio": "3:4"
+        },
+        "singleColumn": {
+          "gap": "16px",
+          "fullWidth": true
+        }
+      },
+      "listItems": {
+        "structure": [
+          "Icon or avatar (left)",
+          "Primary text",
+          "Secondary text (optional)",
+          "Action or status (right)"
+        ],
+        "spacing": {
+          "padding": "16px",
+          "gap": "12px"
+        }
+      }
+    },
+    "designPrinciples": {
+      "visual": [
+        "Clean and minimal aesthetic",
+        "Generous white space",
+        "Consistent green accent color",
+        "Rounded corners throughout",
+        "Subtle shadows for depth"
+      ],
+      "interaction": [
+        "Touch-friendly button sizes (min 48px height)",
+        "Clear visual hierarchy",
+        "Intuitive navigation patterns",
+        "Consistent interaction feedback"
+      ],
+      "content": [
+        "Concise, action-oriented copy",
+        "Clear call-to-action buttons",
+        "Scannable information architecture",
+        "Progressive disclosure"
+      ]
+    },
+    "breakpoints": {
+      "mobile": "0px",
+      "tablet": "768px",
+      "desktop": "1024px"
+    },
+    "accessibility": {
+      "minContrast": "4.5:1",
+      "minTouchTarget": "44px",
+      "focusIndicator": "3px solid rgba(76, 175, 80, 0.3)",
+      "considerations": [
+        "High contrast text",
+        "Adequate touch targets",
+        "Clear focus states",
+        "Semantic HTML structure"
+      ]
+    },
+    "animations": {
+      "duration": {
+        "fast": "150ms",
+        "normal": "300ms",
+        "slow": "500ms"
+      },
+      "easing": {
+        "default": "cubic-bezier(0.4, 0, 0.2, 1)",
+        "bounce": "cubic-bezier(0.68, -0.55, 0.265, 1.55)"
+      },
+      "commonTransitions": [
+        "opacity",
+        "transform",
+        "background-color",
+        "border-color"
+      ]
+    }
+  }

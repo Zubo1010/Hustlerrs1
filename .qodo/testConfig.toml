@@ -1,0 +1,3 @@
+[javascriptreact]
+testingFramework = "Jest"
+mockingFramework = "Jest Mocks"

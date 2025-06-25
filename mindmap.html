@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Board Application - Mind Map</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            overflow: auto;
+            padding: 20px;
+        }
+
+        .mind-map-container {
+            position: relative;
+            width: 100%;
+            min-height: 800px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            overflow: hidden;
+        }
+
+        .node {
+            position: absolute;
+            padding: 15px 25px;
+            border-radius: 25px;
+            color: white;
+            font-weight: 600;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255,255,255,0.2);
+            min-width: 140px;
+            font-size: 12px;
+            z-index: 10;
+        }
+
+        .node:hover {
+            transform: scale(1.1);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+            z-index: 20;
+        }
+
+        .central-node {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            font-size: 18px;
+            padding: 25px 35px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation: pulse 2s infinite;
+        }
+
+        .main-category {
+            background: linear-gradient(135deg, #4834d4, #686de0);
+            font-size: 15px;
+            padding: 20px 30px;
+        }
+
+        .sub-category {
+            background: linear-gradient(135deg, #00d2d3, #54a0ff);
+            font-size: 13px;
+            padding: 15px 25px;
+        }
+
+        .feature {
+            background: linear-gradient(135deg, #5f27cd, #a55eea);
+            font-size: 11px;
+            padding: 12px 20px;
+            min-width: 120px;
+        }
+
+        /* Connection Lines */
+        .connection {
+            position: absolute;
+            background: linear-gradient(90deg, rgba(255,255,255,0.6), rgba(255,255,255,0.2));
+            height: 2px;
+            transform-origin: left center;
+            z-index: 1;
+        }
+
+        /* Positioning */
+        /* User Roles & Authentication */
+        .user-roles { top: 15%; left: 50%; transform: translate(-50%, -50%); }
+        .job-giver { top: 5%; left: 25%; transform: translate(-50%, -50%); }
+        .hustler { top: 5%; left: 50%; transform: translate(-50%, -50%); }
+        .all-users { top: 5%; left: 75%; transform: translate(-50%, -50%); }
+
+        /* Job Management */
+        .job-management { top: 50%; left: 15%; transform: translate(-50%, -50%); }
+        .create-job { top: 30%; left: 5%; transform: translate(-50%, -50%); }
+        .get-jobs { top: 45%; left: 2%; transform: translate(-50%, -50%); }
+        .get-job-id { top: 60%; left: 5%; transform: translate(-50%, -50%); }
+        .update-job { top: 75%; left: 10%; transform: translate(-50%, -50%); }
+
+        /* Create Job Features */
+        .check-fields { top: 20%; left: 8%; transform: translate(-50%, -50%); }
+        .save-job { top: 25%; left: 15%; transform: translate(-50%, -50%); }
+        .confirm-success { top: 35%; left: 12%; transform: translate(-50%, -50%); }
+
+        /* Get Jobs Features */
+        .filters { top: 40%; left: 8%; transform: translate(-50%, -50%); }
+        .pagination { top: 50%; left: 8%; transform: translate(-50%, -50%); }
+        .job-details { top: 55%; left: 15%; transform: translate(-50%, -50%); }
+
+        /* Application & Bidding */
+        .app-bidding { top: 50%; left: 85%; transform: translate(-50%, -50%); }
+        .apply-job { top: 30%; left: 95%; transform: translate(-50%, -50%); }
+        .get-applications { top: 45%; left: 98%; transform: translate(-50%, -50%); }
+        .accept-bid { top: 60%; left: 95%; transform: translate(-50%, -50%); }
+        .reject-bid { top: 75%; left: 90%; transform: translate(-50%, -50%); }
+        .get-job-apps { top: 85%; left: 85%; transform: translate(-50%, -50%); }
+
+        /* Apply Job Features */
+        .check-role { top: 20%; left: 88%; transform: translate(-50%, -50%); }
+        .validate-price { top: 25%; left: 95%; transform: translate(-50%, -50%); }
+        .create-bid { top: 35%; left: 92%; transform: translate(-50%, -50%); }
+        .notify-giver { top: 40%; left: 85%; transform: translate(-50%, -50%); }
+
+        /* Accept/Reject Bid Features */
+        .verify-ownership { top: 65%; left: 88%; transform: translate(-50%, -50%); }
+        .update-status { top: 70%; left: 95%; transform: translate(-50%, -50%); }
+        .notify-hustler { top: 80%; left: 92%; transform: translate(-50%, -50%); }
+
+        /* Animations */
+        @keyframes pulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.05); }
+        }
+
+        .node {
+            animation: fadeIn 0.8s ease forwards;
+            opacity: 0;
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        /* Staggered animation delays */
+        .central-node { animation-delay: 0s; }
+        .main-category { animation-delay: 0.2s; }
+        .sub-category { animation-delay: 0.4s; }
+        .feature { animation-delay: 0.6s; }
+
+        /* Connection lines */
+        .line1 { top: 32%; left: 50%; width: 200px; transform: rotate(-45deg); }
+        .line2 { top: 50%; left: 32%; width: 180px; transform: rotate(0deg); }
+        .line3 { top: 50%; left: 68%; width: 180px; transform: rotate(0deg); }
+
+        /* Curved connections using pseudo-elements */
+        .curved-connection::before {
+            content: '';
+            position: absolute;
+            width: 2px;
+            height: 100px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.6), rgba(255,255,255,0.2));
+            border-radius: 2px;
+        }
+
+        .legend {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 15px;
+            color: white;
+            border: 1px solid rgba(255,255,255,0.2);
+            z-index: 100;
+        }
+
+        .legend h3 {
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+            font-size: 12px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 12px;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        .info-box {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 15px;
+            color: white;
+            border: 1px solid rgba(255,255,255,0.2);
+            max-width: 300px;
+            z-index: 100;
+        }
+
+        .info-box h3 {
+            margin-bottom: 10px;
+            color: #ff6b6b;
+        }
+
+        .info-box p {
+            font-size: 12px;
+            line-height: 1.4;
+            margin-bottom: 8px;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .mind-map-container {
+                min-height: 600px;
+            }
+            
+            .node {
+                font-size: 10px;
+                padding: 10px 15px;
+                min-width: 100px;
+            }
+            
+            .central-node {
+                font-size: 14px;
+                padding: 20px 25px;
+            }
+            
+            .legend, .info-box {
+                position: relative;
+                margin: 10px;
+                max-width: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="mind-map-container">
+        <!-- Legend -->
+        <div class="legend">
+            <h3>Legend</h3>
+            <div class="legend-item">
+                <div class="legend-color" style="background: linear-gradient(135deg, #ff6b6b, #ee5a24);"></div>
+                Central Node
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: linear-gradient(135deg, #4834d4, #686de0);"></div>
+                Main Categories
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: linear-gradient(135deg, #00d2d3, #54a0ff);"></div>
+                Sub Categories
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: linear-gradient(135deg, #5f27cd, #a55eea);"></div>
+                Features
+            </div>
+        </div>
+
+        <!-- Central Node -->
+        <div class="node central-node">
+            Job Board<br>Application
+        </div>
+
+        <!-- Connection Lines -->
+        <div class="connection line1"></div>
+        <div class="connection line2"></div>
+        <div class="connection line3"></div>
+
+        <!-- Main Categories -->
+        <div class="node main-category user-roles">
+            User Roles &<br>Authentication
+        </div>
+
+        <div class="node main-category job-management">
+            Job<br>Management
+        </div>
+
+        <div class="node main-category app-bidding">
+            Application &<br>Bidding
+        </div>
+
+        <!-- User Roles Sub-categories -->
+        <div class="node sub-category job-giver">
+            Job Giver<br><small>Creates jobs, accepts/rejects bids</small>
+        </div>
+
+        <div class="node sub-category hustler">
+            Hustler<br><small>Applies for jobs</small>
+        </div>
+
+        <div class="node sub-category all-users">
+            All Users<br><small>Can view jobs</small>
+        </div>
+
+        <!-- Job Management Sub-categories -->
+        <div class="node sub-category create-job">
+            Create Job<br><small>(Job Giver)</small>
+        </div>
+
+        <div class="node sub-category get-jobs">
+            Get Jobs<br><small>(All Users)</small>
+        </div>
+
+        <div class="node sub-category get-job-id">
+            Get Job By ID<br><small>(Any User)</small>
+        </div>
+
+        <div class="node sub-category update-job">
+            Update Job Status<br><small>(Job Giver)</small>
+        </div>
+
+        <!-- Create Job Features -->
+        <div class="node feature check-fields">
+            Check Required<br>Fields
+        </div>
+
+        <div class="node feature save-job">
+            Save Job
+        </div>
+
+        <div class="node feature confirm-success">
+            Confirm<br>Success
+        </div>
+
+        <!-- Get Jobs Features -->
+        <div class="node feature filters">
+            Filters<br><small>Area, Pay, Date, Skill, Geo</small>
+        </div>
+
+        <div class="node feature pagination">
+            Pagination<br>Query
+        </div>
+
+        <div class="node feature job-details">
+            Show Job Details<br>with User Info
+        </div>
+
+        <!-- Application & Bidding Sub-categories -->
+        <div class="node sub-category apply-job">
+            Apply for Job<br><small>(Hustler)</small>
+        </div>
+
+        <div class="node sub-category get-applications">
+            Get My<br>Applications<br><small>(Hustler)</small>
+        </div>
+
+        <div class="node sub-category accept-bid">
+            Accept Bid<br><small>(Job Giver)</small>
+        </div>
+
+        <div class="node sub-category reject-bid">
+            Reject Bid<br><small>(Job Giver)</small>
+        </div>
+
+        <div class="node sub-category get-job-apps">
+            Get Job<br>Applications<br><small>(Job Giver)</small>
+        </div>
+
+        <!-- Apply Job Features -->
+        <div class="node feature check-role">
+            Check Role &<br>Price Validity
+        </div>
+
+        <div class="node feature validate-price">
+            Confirm Job Open<br>& Not Applied
+        </div>
+
+        <div class="node feature create-bid">
+            Create Pending<br>Bid
+        </div>
+
+        <div class="node feature notify-giver">
+            Notify<br>Job Giver
+        </div>
+
+        <!-- Accept/Reject Features -->
+        <div class="node feature verify-ownership">
+            Verify Job<br>Ownership
+        </div>
+
+        <div class="node feature update-status">
+            Update Bid<br>Status
+        </div>
+
+        <div class="node feature notify-hustler">
+            Notify<br>Hustler
+        </div>
+
+        <!-- Info Box -->
+        <div class="info-box">
+            <h3>Job Board Application</h3>
+            <p><strong>Core Functions:</strong></p>
+            <p>• User authentication and role management</p>
+            <p>• Complete job lifecycle management</p>
+            <p>• Bidding and application system</p>
+            <p>• Real-time notifications</p>
+            <p>• Advanced filtering and search</p>
+            <p><strong>Hover over nodes to explore details</strong></p>
+        </div>
+    </div>
+</body>
+</html>
