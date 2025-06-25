@@ -13,6 +13,12 @@ const HustlerApplicationSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
+    latitude: {
+ type: Number,
+    },
+    longitude: {
+ type: Number,
+    },
     nidOrBirthCertificate: {
         type: String, // Path to the uploaded image
         required: true,

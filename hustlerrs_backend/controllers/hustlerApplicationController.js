@@ -6,7 +6,7 @@ const path = require('path');
 
 exports.apply = async (req, res) => {
     try {
-        const { name, age, address, password, email, phone } = req.body;
+        const { name, age, address, latitude, longitude, password, email, phone } = req.body;
 
         if (!req.files || !req.files.nidOrBirthCertificate || !req.files.studentId || !req.files.profilePicture) {
             return res.status(400).json({ message: 'Please upload all required documents.' });
@@ -28,6 +28,8 @@ exports.apply = async (req, res) => {
             name,
             age,
             address,
+            latitude,
+            longitude,
             email,
             phone,
             nidOrBirthCertificate: nidOrBirthCertificatePath,
@@ -70,7 +72,7 @@ exports.approveApplication = async (req, res) => {
         application.status = 'approved';
 
         // Create a new user
-        const { name, age, address, email, phone, profilePicture, password: hashedPassword } = application;
+        const { name, age, address, latitude, longitude, email, phone, profilePicture, password: hashedPassword } = application;
 
         // Generate a unique filename for the profile picture
         const timestamp = Date.now();
@@ -104,6 +106,10 @@ exports.approveApplication = async (req, res) => {
                 phone: phone,
                 age,
                 location: address, // Use the application's address for the user's location
+                coordinates: {
+                    type: 'Point',
+                    coordinates: [longitude, latitude]
+                },
                 profilePicture: newProfilePicturePath,
             });
 
