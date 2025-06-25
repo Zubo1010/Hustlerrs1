@@ -51,7 +51,9 @@ const HustlerRegisterForm = () => {
       const res = await axios.get('/api/utils/reverse-geocode', {
         params: {
           lat,
-      });
+          lon,
+        }
+      }); // <-- Removed the extra curly brace
       const displayAddress = res.data.display_name;
       setFormData(prev => ({
         ...prev,
