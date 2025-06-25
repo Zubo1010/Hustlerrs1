@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 
 const registerUser = async (req, res) => {
   try {
-    const { fullName, email, phone, password, role, location, age } = req.body;
+    const { fullName, email, phone, password, role, location, age, latitude, longitude } = req.body;
 
     if (!email && !phone) {
         return res.status(400).json({ message: 'Email or phone number is required.' });
@@ -27,7 +27,12 @@ const registerUser = async (req, res) => {
       password: hashedPassword,
       role,
       location,
+      coordinates: {
+        type: 'Point',
+        coordinates: [longitude, latitude]
+      }
     };
+
     if (email) newUser.email = email;
     if (phone) newUser.phone = phone;
     if (role === 'Hustler' && age) newUser.age = age;

@@ -34,6 +34,7 @@ export default function AllJobs() {
   const [manualLocation, setManualLocation] = useState('');
   const [manualMode, setManualMode] = useState(false);
   const [locationUsed, setLocationUsed] = useState(false); // Track if location was used for filtering
+  const [searchRadius, setSearchRadius] = useState(10); // Default radius in km
 
   useEffect(() => {
     // Try to get user's real-time location on mount (only once)
@@ -68,8 +69,8 @@ export default function AllJobs() {
     try {
       setLoading(true);
       let data;
-      if (userLocation.lng !== null && userLocation.lat !== null) {
-        data = await getJobs(searchTerm, status, currentPage, 10, userLocation.lng, userLocation.lat);
+      if ((userLocation.lng !== null && userLocation.lat !== null) || manualMode) { // Use location if available or manual mode is on
+        data = await getJobs(searchTerm, status, currentPage, 10, userLocation.lng, userLocation.lat, searchRadius);
         setLocationUsed(true);
       } else {
         data = await getJobs(searchTerm, status, currentPage);
@@ -151,7 +152,7 @@ export default function AllJobs() {
       <div className="max-w-7xl mx-auto">
         {/* Manual Location Selection UI */}
         <div className="mb-6">
-          <form onSubmit={handleManualLocationSubmit} className="flex flex-col sm:flex-row gap-4 items-center">
+          <form onSubmit={handleManualLocationSubmit} className="flex flex-col sm:flex-row gap-4 items-center justify-between">
             <label htmlFor="manual-location" className="font-medium text-gray-700">Select City/Location:</label>
             <select
               id="manual-location"
@@ -182,6 +183,21 @@ export default function AllJobs() {
               </button>
             )}
           </form>
+          <div className="flex items-center gap-4 mt-4 sm:mt-0">
+            <label htmlFor="search-radius" className="font-medium text-gray-700">Search Radius (km):</label>
+            <select
+              id="search-radius"
+              value={searchRadius}
+              onChange={(e) => setSearchRadius(parseInt(e.target.value, 10))}
+              className="w-full sm:w-20 px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value={5}>5</option>
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+          </div>
         </div>
 
         <div className="flex justify-between items-center mb-6">

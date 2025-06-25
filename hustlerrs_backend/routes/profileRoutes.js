@@ -15,4 +15,7 @@ router.put('/', auth, profileController.updateProfile);
 // Upload profile picture
 router.post('/upload-picture', auth, profileController.uploadProfilePicture);
 
+// Get nearby hustlers (for Job Givers)
+router.get('/nearby-hustlers', auth, profileController.getNearbyHustlers);
+
 module.exports = router; 

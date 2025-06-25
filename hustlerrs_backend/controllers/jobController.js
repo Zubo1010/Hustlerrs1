@@ -78,7 +78,22 @@ const createJob = asyncHandler(async (req, res) => {
         return res.status(400).json({ message: 'Please provide all required job fields.' });
     }
 
-    const newJob = new Job({ ...req.body, createdBy: req.user._id, status: 'open' });
+    // Prepare job data, including coordinates if provided
+    const jobData = {
+ ...req.body,
+ createdBy: req.user._id,
+ status: 'open'
+    };
+
+    // If latitude and longitude are provided in location, add coordinates
+    if (location && location.latitude !== undefined && location.longitude !== undefined) {
+ jobData.location.coordinates = {
+ type: 'Point',
+ coordinates: [parseFloat(location.longitude), parseFloat(location.latitude)]
+        };
+    }
+
+    const newJob = new Job(jobData);
     await newJob.save();
     res.status(201).json({ message: 'Job created successfully!', job: newJob });
 });
@@ -119,7 +134,8 @@ const getJobs = asyncHandler(async (req, res, isMyJobs = false) => {
         page = 1,
         limit = 10,
         lng, // longitude from query
-        lat  // latitude from query
+        lat, // latitude from query
+        radius = 10 // radius in km, default 10km
     } = req.query;
 
     const query = {};
@@ -194,11 +210,13 @@ const getJobs = asyncHandler(async (req, res, isMyJobs = false) => {
     let jobs, totalJobs;
     if (useGeo && userCoordinates) {
         // Geospatial query: jobs within 10km using $geoWithin
+        // Convert radius from kilometers to radians by dividing by Earth's radius (approx 6378.1 km)
+        const radiusInRadians = parseFloat(radius) / 6378.1;
         jobs = await Job.find({
             ...query,
             'location.coordinates': {
                 $geoWithin: {
-                    $centerSphere: [userCoordinates, 10 / 6378.1] // 10km radius, Earth's radius in km
+                    $centerSphere: [userCoordinates, radiusInRadians]
                 }
             }
         })
@@ -210,11 +228,13 @@ const getJobs = asyncHandler(async (req, res, isMyJobs = false) => {
         .limit(parseInt(limit));
 
         // For total count, use the same filter
+        // Convert radius from kilometers to radians
+        const countRadiusInRadians = parseFloat(radius) / 6378.1;
         totalJobs = await Job.countDocuments({
             ...query,
             'location.coordinates': {
                 $geoWithin: {
-                    $centerSphere: [userCoordinates, 10 / 6378.1]
+                    $centerSphere: [userCoordinates, countRadiusInRadians]
                 }
             }
         });

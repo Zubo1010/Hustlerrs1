@@ -173,3 +173,42 @@ exports.uploadProfilePicture = (req, res) => {
     }
   });
 }; 
+
+// Get nearby Hustlers
+exports.getNearbyHustlers = asyncHandler(async (req, res) => {
+  // Check user role
+  if (req.user.role !== 'Job Giver') {
+    res.status(403);
+    throw new Error('Only job givers can search for hustlers.');
+  }
+
+  const { lat, lng, radius } = req.query;
+
+  if (!lat || !lng) {
+    return res.status(400).json({ message: 'Latitude and longitude are required query parameters.' });
+  }
+
+  const userLatitude = parseFloat(lat);
+  const userLongitude = parseFloat(lng);
+  const searchRadius = radius ? parseFloat(radius) : 10; // Default to 10km
+
+  if (isNaN(userLatitude) || isNaN(userLongitude) || isNaN(searchRadius) || searchRadius <= 0) {
+    return res.status(400).json({ message: 'Invalid latitude, longitude, or radius.' });
+  }
+
+  try {
+    const hustlers = await User.find({
+      role: 'Hustler',
+      'coordinates.coordinates': {
+        $geoWithin: {
+          $centerSphere: [[userLongitude, userLatitude], searchRadius / 6378.1] // Radius in radians
+        }
+      }
+    }).select('fullName email phone location profilePicture skills averageRating reviewCount');
+
+    res.json({ hustlers });
+  } catch (error) {
+    console.error('Get nearby hustlers error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
