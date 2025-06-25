@@ -138,6 +138,9 @@ const HustlerRegisterForm = () => {
     for (const key in formData) {
       data.append(key, formData[key]);
     }
+    // Ensure latitude and longitude are not sent as the string "null"
+    if (formData.latitude === null) data.set('latitude', '');
+    if (formData.longitude === null) data.set('longitude', '');
 
     try {
       const res = await axios.post('http://localhost:5000/api/hustler-applications/apply', data, {
