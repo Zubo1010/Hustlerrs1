@@ -46,17 +46,6 @@ const userSchema = new mongoose.Schema({
     unique: true,
     sparse: true, // Allow multiple null values
   },
-  coordinates: {
-    type: {
-      type: String,
-      enum: ['Point'],
-      default: 'Point',
-    },
-    coordinates: {
-      type: [Number], // [lng, lat]
-      default: undefined,
-    },
-  },
   division: {
     type: String,
     required: true,
@@ -150,8 +139,5 @@ userSchema.virtual('reviewCount').get(function() {
     }
     return 0;
 });
-
-// Add 2dsphere index for coordinates
-userSchema.index({ coordinates: '2dsphere' });
 
 module.exports = mongoose.model('User', userSchema);

@@ -35,17 +35,6 @@ const jobSchema = new mongoose.Schema({
       type: String,
       required: [true, 'Address is required.'],
     },
-    coordinates: {
-      type: {
-        type: String,
-        enum: ['Point'],
-        default: 'Point',
-      },
-      coordinates: {
-        type: [Number], // [lng, lat]
-        required: false,
-      },
-    },
   },
   date: {
     type: Date,
@@ -157,8 +146,5 @@ jobSchema.virtual('applicantCount', {
   foreignField: 'job',
   count: true
 });
-
-// Add 2dsphere index for location.coordinates
-jobSchema.index({ 'location.coordinates': '2dsphere' });
 
 module.exports = mongoose.model('Job', jobSchema);

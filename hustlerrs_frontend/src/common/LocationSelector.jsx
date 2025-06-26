@@ -14,15 +14,6 @@ const LocationSelector = ({ value, onChange, readOnlyAddress = true }) => {
       .catch(() => setLocations([]));
   }, []);
 
-  useEffect(() => {
-    // Auto-fill address when all are selected
-    if (division && district && upazila) {
-      const addr = `${upazila}, ${district}, ${division}`;
-      setAddress(addr);
-      onChange && onChange({ division, district, upazila, address: addr });
-    }
-  }, [division, district, upazila]);
-
   const handleDivisionChange = (e) => {
     setDivision(e.target.value);
     setDistrict('');
@@ -30,10 +21,18 @@ const LocationSelector = ({ value, onChange, readOnlyAddress = true }) => {
   };
   const handleDistrictChange = (e) => {
     setDistrict(e.target.value);
-    setUpazila('');
+ setUpazila('');
+    onChange && onChange({ division, district: e.target.value, upazila: '', address });
   };
   const handleUpazilaChange = (e) => {
     setUpazila(e.target.value);
+    onChange && onChange({ division, district, upazila: e.target.value, address });
+  };
+
+  const handleAddressChange = (e) => {
+    setAddress(e.target.value);
+    // Call onChange whenever address changes, preserving current selections
+    onChange && onChange({ division, district, upazila, address: e.target.value });
   };
 
   const divisionObj = locations.find(d => d.division_name === division);
@@ -72,7 +71,7 @@ const LocationSelector = ({ value, onChange, readOnlyAddress = true }) => {
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-700">Address</label>
-        <input type="text" value={address} readOnly={readOnlyAddress} className="input bg-gray-100" required />
+        <input type="text" value={address} onChange={handleAddressChange} className="input" required />
       </div>
     </div>
   );

@@ -5,8 +5,9 @@ const User = require('../models/Users');
 const Bid = require('../models/Bid');
 const Message = require('../models/Message');
 const { createNotification } = require('./notificationController');
+const { isValidLocation } = require('../utils/locationUtils');
 const asyncHandler = require('express-async-handler');
-
+const {getLocationData} = require('../services/locationService')
 /**
  * Transforms a raw job document from the database into the format expected by the frontend.
  * Also checks if the current user (if any) has applied for the job.
@@ -77,6 +78,10 @@ const createJob = asyncHandler(async (req, res) => {
     if (!title || !jobType || !location?.division || !location?.district || !location?.upazila || !location?.address || !location?.area || !date || !startTime || !duration || !payment || !hiringType || !contactInfo?.phone) {
         return res.status(400).json({ message: 'Please provide all required job fields including location (division, district, upazila, address, area).' });
     }
+// Existing validation for location (remove or modify)
+ if (location?.division && location?.district && location?.upazila && !isValidLocation(location.division, location.district, location.upazila)) {
+ return res.status(400).json({ message: 'Invalid location provided.' });
+ }
 
     // Prepare job data, including coordinates if provided
     const jobData = {
@@ -85,13 +90,6 @@ const createJob = asyncHandler(async (req, res) => {
         status: 'open'
     };
 
-    // If latitude and longitude are provided in location, add coordinates
-    if (location && location.latitude !== undefined && location.longitude !== undefined) {
-        jobData.location.coordinates = {
-            type: 'Point',
-            coordinates: [parseFloat(location.longitude), parseFloat(location.latitude)]
-        };
-    }
 
     const newJob = new Job(jobData);
     await newJob.save();
@@ -121,6 +119,33 @@ const getJobApplications = asyncHandler(async (req, res) => {
 
     res.json({ job, applications: job.bids });
 });
+
+//Validation Location
+const validateLocation = (division, district, upazila) => {
+    const locationData = getLocationData();
+    if (!locationData || !locationData.divisions) {
+        console.error("Location data not loaded or invalid.");
+        return false; // Cannot validate if data is not available
+    }
+
+    const foundDivision = locationData.divisions.find(d => d.division_name === division);
+    if (!foundDivision) {
+        return false; // Division not found
+    }
+
+    const foundDistrict = foundDivision.districts.find(d => d.district_name === district);
+    if (!foundDistrict) {
+        return false; // District not found
+    }
+
+    const foundUpazila = foundDistrict.upazilas.find(u => u === upazila);
+    if (!foundUpazila) {
+        return false; // Upazila not found
+    }
+
+    return true; // Location is valid
+};
+
 
 // Generic Job Fetching Logic
 const getJobs = asyncHandler(async (req, res, isMyJobs = false) => {
