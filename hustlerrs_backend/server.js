@@ -11,6 +11,10 @@ const Sentry = require('@sentry/node');
 
 dotenv.config();
 const app = express();
+const server = http.createServer(app);
+
+// Connect to MongoDB
+connectDB();
 
 Sentry.init({
     dsn: 'https://8b450fe24119a6a13ccb7519069d2c28@o4509553810997248.ingest.us.sentry.io/4509553953538048',
@@ -58,10 +62,6 @@ app.use('/api/reviews', reviewRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/hustler-applications', hustlerApplicationRoutes);
 app.use('/api/utils', utilsRoutes);
-
-connectDB();
-
-const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {

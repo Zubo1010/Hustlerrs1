@@ -117,12 +117,15 @@ exports.getProfileById = asyncHandler(async (req, res) => {
 // Update user profile
 exports.updateProfile = async (req, res) => {
   try {
-    const { fullName, phone, location, bio, skills, businessName } = req.body;
+    const { fullName, phone, division, district, upazila, address, bio, skills, businessName } = req.body;
     
     const updateData = {};
     if (fullName) updateData.fullName = fullName;
     if (phone) updateData.phone = phone;
-    if (location) updateData.location = location;
+    if (division) updateData.division = division;
+    if (district) updateData.district = district;
+    if (upazila) updateData.upazila = upazila;
+    if (address) updateData.address = address;
     if (bio) updateData.bio = bio;
     
     // Role-specific updates

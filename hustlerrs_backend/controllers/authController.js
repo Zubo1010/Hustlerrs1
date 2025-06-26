@@ -4,10 +4,13 @@ const jwt = require('jsonwebtoken');
 
 const registerUser = async (req, res) => {
   try {
-    const { fullName, email, phone, password, role, location, age, latitude, longitude } = req.body;
+    const { fullName, email, phone, password, role, division, district, upazila, address, age } = req.body;
 
     if (!email && !phone) {
         return res.status(400).json({ message: 'Email or phone number is required.' });
+    }
+    if (!division || !district || !upazila || !address) {
+        return res.status(400).json({ message: 'Division, district, upazila, and address are required.' });
     }
 
     // check if user already exists
@@ -26,11 +29,10 @@ const registerUser = async (req, res) => {
       fullName,
       password: hashedPassword,
       role,
-      location,
-      coordinates: {
-        type: 'Point',
-        coordinates: [longitude, latitude]
-      }
+      division,
+      district,
+      upazila,
+      address
     };
 
     if (email) newUser.email = email;

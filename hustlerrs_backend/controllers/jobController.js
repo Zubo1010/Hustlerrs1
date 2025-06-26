@@ -74,22 +74,22 @@ const createJob = asyncHandler(async (req, res) => {
 
     const { title, jobType, location, date, startTime, duration, payment, hiringType, contactInfo } = req.body;
 
-    if (!title || !jobType || !location?.area || !date || !startTime || !duration || !payment || !hiringType || !contactInfo?.phone) {
-        return res.status(400).json({ message: 'Please provide all required job fields.' });
+    if (!title || !jobType || !location?.division || !location?.district || !location?.upazila || !location?.address || !location?.area || !date || !startTime || !duration || !payment || !hiringType || !contactInfo?.phone) {
+        return res.status(400).json({ message: 'Please provide all required job fields including location (division, district, upazila, address, area).' });
     }
 
     // Prepare job data, including coordinates if provided
     const jobData = {
- ...req.body,
- createdBy: req.user._id,
- status: 'open'
+        ...req.body,
+        createdBy: req.user._id,
+        status: 'open'
     };
 
     // If latitude and longitude are provided in location, add coordinates
     if (location && location.latitude !== undefined && location.longitude !== undefined) {
- jobData.location.coordinates = {
- type: 'Point',
- coordinates: [parseFloat(location.longitude), parseFloat(location.latitude)]
+        jobData.location.coordinates = {
+            type: 'Point',
+            coordinates: [parseFloat(location.longitude), parseFloat(location.latitude)]
         };
     }
 
@@ -133,9 +133,9 @@ const getJobs = asyncHandler(async (req, res, isMyJobs = false) => {
         jobType,
         page = 1,
         limit = 10,
-        lng, // longitude from query
-        lat, // latitude from query
-        radius = 10 // radius in km, default 10km
+        upazila,
+        district,
+        division
     } = req.query;
 
     const query = {};
@@ -152,6 +152,13 @@ const getJobs = asyncHandler(async (req, res, isMyJobs = false) => {
     }
 
     // --- Filtering ---
+    if (upazila) {
+        query['location.upazila'] = upazila;
+    } else if (district) {
+        query['location.district'] = district;
+    } else if (division) {
+        query['location.division'] = division;
+    }
     if (area) query['location.area'] = area;
     if (jobType) query.jobType = { $in: jobType.split(',') };
     if (maxPay) query['payment.amount'] = { $lte: parseInt(maxPay, 10) };
@@ -174,28 +181,6 @@ const getJobs = asyncHandler(async (req, res, isMyJobs = false) => {
         if(dateQuery) query.date = dateQuery;
     }
 
-    // --- GEO FILTERING ---
-    let useGeo = false;
-    let userCoordinates = null;
-    if (lng && lat) {
-        // If coordinates are provided in query, use them
-        useGeo = true;
-        userCoordinates = [parseFloat(lng), parseFloat(lat)];
-        // If user is logged in, update their coordinates in DB
-        if (req.user && req.user._id) {
-            await User.findByIdAndUpdate(req.user._id, {
-                coordinates: {
-                    type: 'Point',
-                    coordinates: userCoordinates
-                }
-            });
-        }
-    } else if (req.user && req.user.coordinates && Array.isArray(req.user.coordinates.coordinates)) {
-        // If user is logged in and has saved coordinates, use them
-        useGeo = true;
-        userCoordinates = req.user.coordinates.coordinates;
-    }
-
     // --- Sorting ---
     const sortOptions = {};
     if (sort === 'highest_pay') {
@@ -207,48 +192,14 @@ const getJobs = asyncHandler(async (req, res, isMyJobs = false) => {
 
     // --- Execution ---
     const skip = (parseInt(page) - 1) * parseInt(limit);
-    let jobs, totalJobs;
-    if (useGeo && userCoordinates) {
-        // Geospatial query: jobs within 10km using $geoWithin
-        // Convert radius from kilometers to radians by dividing by Earth's radius (approx 6378.1 km)
-        const radiusInRadians = parseFloat(radius) / 6378.1;
-        jobs = await Job.find({
-            ...query,
-            'location.coordinates': {
-                $geoWithin: {
-                    $centerSphere: [userCoordinates, radiusInRadians]
-                }
-            }
-        })
+    const jobs = await Job.find(query)
         .populate('createdBy', 'name')
         .populate('bids')
         .populate({ path: 'bids', select: 'hustler', populate: { path: 'hustler', select: '_id' } })
         .sort(sortOptions)
         .skip(skip)
         .limit(parseInt(limit));
-
-        // For total count, use the same filter
-        // Convert radius from kilometers to radians
-        const countRadiusInRadians = parseFloat(radius) / 6378.1;
-        totalJobs = await Job.countDocuments({
-            ...query,
-            'location.coordinates': {
-                $geoWithin: {
-                    $centerSphere: [userCoordinates, countRadiusInRadians]
-                }
-            }
-        });
-    } else {
-        // No geo filter, fallback to normal query
-        jobs = await Job.find(query)
-            .populate('createdBy', 'name')
-            .populate('bids')
-            .populate({ path: 'bids', select: 'hustler', populate: { path: 'hustler', select: '_id' } })
-            .sort(sortOptions)
-            .skip(skip)
-            .limit(parseInt(limit));
-        totalJobs = await Job.countDocuments(query);
-    }
+    const totalJobs = await Job.countDocuments(query);
 
     // --- Transformation ---
     const userId = req.user ? req.user._id : null;

@@ -15,12 +15,25 @@ const jobSchema = new mongoose.Schema({
     enum: ['Physical Job', 'Cleaning', 'Shop Helper', 'Online Work', 'Delivery Help', 'Event Setup', 'Tutoring', 'Packaging', 'Other'],
   },
   location: {
+    division: {
+      type: String,
+      required: [true, 'Division is required.'],
+    },
+    district: {
+      type: String,
+      required: [true, 'District is required.'],
+    },
+    upazila: {
+      type: String,
+      required: [true, 'Upazila is required.'],
+    },
     area: {
       type: String,
       required: [true, 'Area is required.'],
     },
     address: {
       type: String,
+      required: [true, 'Address is required.'],
     },
     coordinates: {
       type: {
@@ -30,7 +43,7 @@ const jobSchema = new mongoose.Schema({
       },
       coordinates: {
         type: [Number], // [lng, lat]
-        required: true,
+        required: false,
       },
     },
   },

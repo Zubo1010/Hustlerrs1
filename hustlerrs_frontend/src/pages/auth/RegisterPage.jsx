@@ -16,6 +16,10 @@ export default function RegisterPage() {
     location: '',
     age: '',
     businessName: '',
+    coordinates: {
+      type: 'Point',
+      coordinates: [null, null] // [longitude, latitude]
+    }
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -139,6 +143,31 @@ export default function RegisterPage() {
     setErrors({}); // Clear previous errors
 
     try {
+      // Get coordinates for the selected location
+      let coordinates = {
+        type: 'Point',
+        coordinates: [null, null]
+      };
+
+      // Default coordinates for areas in Dhaka
+      const areaCoordinates = {
+        'Mirpur': [90.3674, 23.8223],
+        'Dhanmondi': [90.3751, 23.7461],
+        'Gulshan': [90.4152, 23.7925],
+        'Banani': [90.4043, 23.7937],
+        'Uttara': [90.3996, 23.8759],
+        'Mohammadpur': [90.3596, 23.7661],
+        'Lalmatia': [90.3697, 23.7523],
+        'Shahbag': [90.3953, 23.7396],
+        'Ramna': [90.4053, 23.7361],
+        'Motijheel': [90.4175, 23.7331],
+        'Old Dhaka': [90.4043, 23.7104]
+      };
+
+      if (areaCoordinates[formData.location]) {
+        coordinates.coordinates = areaCoordinates[formData.location];
+      }
+
       // Prepare data for API
       const registerData = {
         fullName: formData.fullName.trim(),
@@ -146,6 +175,7 @@ export default function RegisterPage() {
         password: formData.password,
         [formData.contactType]: formData.contactValue.trim(),
         location: formData.location,
+        coordinates: coordinates,
         // Role-specific fields
         ...(formData.role === 'Hustler' && formData.age && {
           age: parseInt(formData.age)

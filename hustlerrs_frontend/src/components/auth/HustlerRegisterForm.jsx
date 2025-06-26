@@ -48,7 +48,7 @@ const HustlerRegisterForm = () => {
 
   const reverseGeocode = async (lat, lon) => {
     try {
-      const res = await axios.get('/api/utils/reverse-geocode', {
+      const res = await axios.get('http://localhost:5000/api/utils/reverse-geocode', {
         params: {
           lat,
           lon,

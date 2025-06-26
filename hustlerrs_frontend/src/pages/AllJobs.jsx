@@ -160,6 +160,11 @@ export default function AllJobs() {
           url = 'http://localhost:5000/api/jobs/my-jobs';
         }
 
+        // If hustler and coordinates are available, add lat/lng/radius to query
+        let lat, lng;
+        if (user?.role === 'Hustler' && user?.coordinates && Array.isArray(user.coordinates.coordinates)) {
+          [lng, lat] = user.coordinates.coordinates; // GeoJSON order: [lng, lat]
+        }
         const queryParams = new URLSearchParams({
           sort,
           area: filters.area,
@@ -168,6 +173,11 @@ export default function AllJobs() {
           noSkillNeeded: filters.noSkillNeeded,
           jobType: filters.jobType.join(','),
         });
+        if (user?.role === 'Hustler' && lat && lng) {
+          queryParams.append('lat', lat);
+          queryParams.append('lng', lng);
+          queryParams.append('radius', 20); // 20km default
+        }
 
         const response = await fetch(`${url}?${queryParams.toString()}`, {
           headers: token ? { 'Authorization': `Bearer ${token}` } : {}

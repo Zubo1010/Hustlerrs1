@@ -46,10 +46,6 @@ const userSchema = new mongoose.Schema({
     unique: true,
     sparse: true, // Allow multiple null values
   },
-  location: {
-    type: String,
-    required: true,
-  },
   coordinates: {
     type: {
       type: String,
@@ -60,6 +56,22 @@ const userSchema = new mongoose.Schema({
       type: [Number], // [lng, lat]
       default: undefined,
     },
+  },
+  division: {
+    type: String,
+    required: true,
+  },
+  district: {
+    type: String,
+    required: true,
+  },
+  upazila: {
+    type: String,
+    required: true,
+  },
+  address: {
+    type: String,
+    required: true,
   },
   password: {
     type: String,

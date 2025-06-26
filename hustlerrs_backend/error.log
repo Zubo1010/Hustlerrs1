@@ -1,0 +1,9 @@
+Error approving application: HustlerApplication validation failed: latitude: Cast to Number failed for value "null" (type string) at path "latitude", longitude: Cast to Number failed for value "null" (type string) at path "longitude"
+ValidationError: HustlerApplication validation failed: latitude: Cast to Number failed for value "null" (type string) at path "latitude", longitude: Cast to Number failed for value "null" (type string) at path "longitude"
+    at Document.invalidate (D:\HUSTLERRS\hustlerrs_backend\node_modules\mongoose\lib\document.js:3352:32)
+    at model.$set (D:\HUSTLERRS\hustlerrs_backend\node_modules\mongoose\lib\document.js:1480:12)
+    at model.$set (D:\HUSTLERRS\hustlerrs_backend\node_modules\mongoose\lib\document.js:1132:16)
+    at model.Document (D:\HUSTLERRS\hustlerrs_backend\node_modules\mongoose\lib\document.js:178:12)
+    at model.Model (D:\HUSTLERRS\hustlerrs_backend\node_modules\mongoose\lib\model.js:127:12)
+    at new model (D:\HUSTLERRS\hustlerrs_backend\node_modules\mongoose\lib\model.js:4836:15)
+    at exports.apply (D:\HUSTLERRS\hustlerrs_backend\controllers\hustlerApplicationController.js:27:32)
