@@ -9,7 +9,7 @@ const LocationSelector = ({ value, onChange, readOnlyAddress = true }) => {
   const [address, setAddress] = useState(value?.address || '');
 
   useEffect(() => {
-    axios.get('/api/utils/locations')
+    axios.get('/utils/locations')
       .then(res => setLocations(res.data.divisions || []))
       .catch(() => setLocations([]));
   }, []);

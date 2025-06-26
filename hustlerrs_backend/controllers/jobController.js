@@ -5,7 +5,7 @@ const User = require('../models/Users');
 const Bid = require('../models/Bid');
 const Message = require('../models/Message');
 const { createNotification } = require('./notificationController');
-const { isValidLocation } = require('../utils/locationUtils');
+
 const asyncHandler = require('express-async-handler');
 const {getLocationData} = require('../services/locationService')
 /**
@@ -78,10 +78,10 @@ const createJob = asyncHandler(async (req, res) => {
     if (!title || !jobType || !location?.division || !location?.district || !location?.upazila || !location?.address || !location?.area || !date || !startTime || !duration || !payment || !hiringType || !contactInfo?.phone) {
         return res.status(400).json({ message: 'Please provide all required job fields including location (division, district, upazila, address, area).' });
     }
-// Existing validation for location (remove or modify)
- if (location?.division && location?.district && location?.upazila && !isValidLocation(location.division, location.district, location.upazila)) {
- return res.status(400).json({ message: 'Invalid location provided.' });
- }
+// Validate location against location_db.json
+if (!validateLocation(location.division, location.district, location.upazila)) {
+    return res.status(400).json({ message: 'Invalid division, district, or upazila provided.' });
+}
 
     // Prepare job data, including coordinates if provided
     const jobData = {

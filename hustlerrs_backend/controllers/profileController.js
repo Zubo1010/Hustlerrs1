@@ -5,7 +5,8 @@ const path = require('path');
 const fs = require('fs');
 const mongoose = require('mongoose');
 const asyncHandler = require('express-async-handler');
-const locationUtils = require('../utils/locationUtils');
+const { getLocationData } = require('../services/locationService');
+
 
 // Configure multer for file upload
 const storage = multer.diskStorage({
@@ -129,7 +130,7 @@ exports.updateProfile = async (req, res) => {
     if (address) updateData.address = address;
     if (bio) updateData.bio = bio;
 
-    if (division && district && upazila && !locationUtils.isValidLocation(division, district, upazila)) {
+    if (division && district && upazila && !getLocationData.isValidLocation(division, district, upazila)) {
       return res.status(400).json({ message: 'Invalid division, district, or upazila provided.' });
     }
     
