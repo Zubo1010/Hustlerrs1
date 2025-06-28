@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { createJob } from '../../services/jobService'; // Assuming this service will be updated
 import { FiBriefcase, FiMapPin, FiClock, FiDollarSign, FiUser, FiCheckSquare, FiCamera, FiPhone, FiMail } from 'react-icons/fi';
 import LocationSelector from '../../common/LocationSelector'; // Import LocationSelector
-import { FaRegBuilding, FaPlus } from 'react-icons/fa';
+
 
 
 const SectionHeader = ({ icon, title }) => (
