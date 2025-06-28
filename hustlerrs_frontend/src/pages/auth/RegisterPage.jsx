@@ -395,7 +395,7 @@ export default function RegisterPage() {
               <option key={age} value={age}>{age} years old</option>
             ))}
           </select>
-          {errors.age && <p className="text-red-500 text-sm mt-1">{errors.age}</p>}\
+          {errors.age && <p className="text-red-500 text-sm mt-1">{errors.age}</p>}
         </div>
       )}
     </div>
