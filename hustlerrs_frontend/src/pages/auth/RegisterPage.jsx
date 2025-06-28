@@ -119,7 +119,11 @@ export default function RegisterPage() {
   };
 
   const handleSubmit = async () => {
+    console.log('handleSubmit called');
+    console.log('formData:', formData); // Add this line
+    //this is tesing of git
     const loc = formData.location;
+
 
     // Final validation check
     const finalValidation = validateStep(currentStep);
