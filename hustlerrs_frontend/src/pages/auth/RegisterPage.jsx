@@ -474,6 +474,54 @@ export default function RegisterPage() {
             ) : (
               'Welcome to the community!'
             )}
+const renderStep3 = () => (
+  <div>
+    <div className="text-center mb-6">
+      <div className="text-3xl mb-2">📍</div>
+      <h2 className="text-2xl font-semibold text-gray-900 mb-2">Your Area</h2>
+      <p className="text-gray-600">This helps us find jobs near you</p>
+    </div>
+
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-2">Select your area</label>
+      {/* Replace the select dropdown with LocationSelector */}
+      <LocationSelector
+        onLocationSelect={(locationData) => {
+          setFormData(prev => ({ ...prev, location: locationData }));
+          // Clear location error when a location is selected
+          if (errors.location) {
+            setErrors(prev => ({
+              ...prev,
+              location: ''
+            }));
+          }
+        }}
+        // You might need to pass the current location data to the selector if you want to pre-populate it
+        // initialLocation={formData.location}
+      />
+      {errors.location && <p className="text-red-500 text-sm mt-1">{errors.location}</p>}
+    </div>
+
+    {formData.role === 'Hustler' && (
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Age</label>
+        <select
+          name="age"
+          value={formData.age || ''}
+          onChange={handleChange}
+          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.age ? 'border-red-500' : 'border-gray-300'
+            }`}
+        >
+          <option value="">Select your age</option>
+          {ageOptions.map(age => (
+            <option key={age} value={age}>{age} years old</option>
+          ))}
+        </select>
+        {errors.age && <p className="text-red-500 text-sm mt-1">{errors.age}</p>}\
+      </div>
+    )}
+  </div>
+);
           </p>
         </div>
 
