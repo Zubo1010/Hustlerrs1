@@ -448,7 +448,7 @@ import { useNavigate } from 'react-router-dom';
 // import { useAuth } from '../../contexts/AuthContext'; // Assuming this will be used
 import { createJob } from '../../services/jobService'; // Assuming this service will be updated
 import { FiBriefcase, FiMapPin, FiClock, FiDollarSign, FiUser, FiCheckSquare, FiCamera, FiPhone, FiMail } from 'react-icons/fi';
-import { FaRegBuilding, FaPlus } from 'react-icons/fa';
+
 
 const SectionHeader = ({ icon, title }) => (
     <div className="flex items-center space-x-3 mb-4">
