@@ -122,6 +122,7 @@ export default function RegisterPage() {
     console.log('handleSubmit called');
     console.log('formData:', formData); // Add this line
     //this is tesing of git
+    //this is git test
     const loc = formData.location;
 
 
