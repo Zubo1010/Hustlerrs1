@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import LocationSelector from '../../common/LocationSelector'
+import LocationSelector from '../../common/LocationSelector'; // Correct import
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -9,17 +9,17 @@ export default function RegisterPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     fullName: '',
-    contactType: 'email', // 'phone' or 'email'
+    contactType: 'email',
     contactValue: '',
     password: '',
     confirmPassword: '',
-    role: 'Hustler', // default to hustler
-    location: '',
+    role: 'Hustler',
+    location: '', // Initialize location as an empty string or null
     age: '',
     businessName: '',
     coordinates: {
       type: 'Point',
-      coordinates: [null, null] // [longitude, latitude]
+      coordinates: [null, null]
     }
   });
   const [errors, setErrors] = useState({});
@@ -27,19 +27,15 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const areas = [
-    'Mirpur', 'Dhanmondi', 'Gulshan', 'Banani', 'Uttara', 'Mohammadpur', 
-    'Lalmatia', 'Shahbag', 'Ramna', 'Motijheel', 'Old Dhaka', 'Other'
-  ];
-
   const ageOptions = Array.from({ length: 50 }, (_, i) => i + 16); // 16-65 years
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
-    
+
     // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({
@@ -63,15 +59,15 @@ export default function RegisterPage() {
         }
         // Check email or phone number based on contactType
         if (formData.contactType === 'email') {
-          if (!formData.email.trim()) {
+          if (!formData.contactValue.trim()) { // Corrected: use contactValue
             newErrors.contactValue = 'Email is required 😅';
-          } else if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(formData.email)) {
+          } else if (!/^[^\\\\s@]+@[^\\\\s@]+\\\\.[^\\\\s@]+$/.test(formData.contactValue)) { // Corrected: use contactValue
             newErrors.contactValue = 'Please enter a valid email 😅';
           }
         } else if (formData.contactType === 'phone') {
-           if (!formData.phoneNumber.trim()) {
+           if (!formData.contactValue.trim()) { // Corrected: use contactValue
             newErrors.contactValue = 'Phone number is required 😅';
-          } else if (!/^(\\\\+880|880|0)?1[3-9]\\\\d{8}$/.test(formData.phoneNumber)) {
+          } else if (!/^(\\\\+880|880|0)?1[3-9]\\\\d{8}$/.test(formData.contactValue)) { // Corrected: use contactValue
             newErrors.contactValue = 'Please enter a valid BD phone number 😅';
           }
         }
@@ -124,30 +120,31 @@ export default function RegisterPage() {
 
   const handleSubmit = async () => {
     const loc = formData.location;
-  
+
     // Final validation check
     const finalValidation = validateStep(currentStep);
     if (!finalValidation) {
       validateStep(currentStep);
       return;
     }
-  
+
     // Additional check for required fields
     const missingFields = [];
-    if (!formData.fullName.trim()) missingFields.push('Full Name');
-    if (!formData.contactValue.trim()) missingFields.push('Contact Info');
+    // Add checks before trimming
+    if (!formData.fullName || !formData.fullName.trim()) missingFields.push('Full Name');
+    if (!formData.contactValue || !formData.contactValue.trim()) missingFields.push('Contact Info');
     if (!formData.password) missingFields.push('Password');
     if (!loc || !loc.division || !loc.district || !loc.upazila) missingFields.push('Location');
     if (formData.role === 'Hustler' && !formData.age) missingFields.push('Age');
-  
+
     if (missingFields.length > 0) {
       setErrors({ submit: `Please fill in: ${missingFields.join(', ')}` });
       return;
     }
-  
+
     setLoading(true);
     setErrors({}); // Clear previous errors
-  
+
     try {
       // Dummy coordinates – later you can use real reverse geocoding
       let coordinates = {
@@ -155,43 +152,24 @@ export default function RegisterPage() {
         coordinates: [null, null]
       };
 
-      // Default coordinates for areas in Dhaka
-      const areaCoordinates = {
-        'Mirpur': [90.3674, 23.8223],
-        'Dhanmondi': [90.3751, 23.7461],
-        'Gulshan': [90.4152, 23.7925],
-        'Banani': [90.4043, 23.7937],
-        'Uttara': [90.3996, 23.8759],
-        'Mohammadpur': [90.3596, 23.7661],
-        'Lalmatia': [90.3697, 23.7523],
-        'Shahbag': [90.3953, 23.7396],
-        'Ramna': [90.4053, 23.7361],
-        'Motijheel': [90.4175, 23.7331],
-        'Old Dhaka': [90.4043, 23.7104]
-      };
-
-      if (areaCoordinates[formData.location]) {
-        coordinates.coordinates = areaCoordinates[formData.location];
-      }
-
       // Prepare data for API
       const registerData = {
         fullName: formData.fullName.trim(),
         role: formData.role,
         password: formData.password,
-        [formData.contactType]: formData.contactValue.trim(),
+        [formData.contactType === 'phone' ? 'phoneNumber' : 'email']: formData.contactValue.trim(), // Correctly map contactType to backend field
         location: formData.location,
         coordinates: coordinates,
-  
+
         ...(formData.role === 'Hustler' && formData.age && {
           age: parseInt(formData.age)
         })
       };
-  
+
       console.log('Sending registration data:', registerData);
-  
+
       const result = await register(registerData);
-      
+
       if (result.success) {
         setCurrentStep(4); // Show success step
       } else {
@@ -204,15 +182,15 @@ export default function RegisterPage() {
       setLoading(false);
     }
   };
-  
+
 
   const renderStepIndicator = () => (
     <div className="flex items-center justify-center mb-8">
       {[1, 2, 3].map((step) => (
         <div key={step} className="flex items-center">
           <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-            step <= currentStep 
-              ? 'bg-blue-600 text-white' 
+            step <= currentStep
+              ? 'bg-blue-600 text-white'
               : 'bg-gray-200 text-gray-500'
           }`}>
             {step}
@@ -284,12 +262,12 @@ export default function RegisterPage() {
               }`}
             placeholder="Enter your full name"
           />
-          {errors.fullName && <p className="text-red-500 text-sm mt-1">{errors.fullName}</p>}
+          {errors.fullName && <p className="text-red-500 text-sm mt-1">{errors.fullName}</p>}\
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Contact Info</label>
-          <div className="flex space-x-2 mb-2">
+          <div className="flex space-x-2 mb-2">\
             <button
               type="button"
               onClick={() => setFormData(prev => ({ ...prev, contactType: 'email', contactValue: '' }))}
@@ -384,19 +362,22 @@ export default function RegisterPage() {
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">Select your area</label>
-        <select
-          name="location"
-          value={formData.location}
-          onChange={handleChange}
-          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-            errors.location ? 'border-red-500' : 'border-gray-300'
-          }`}
-        >
-          <option value="">-- Select an Area --</option>
-          {areas.map(area => (
-            <option key={area} value={area}>{area}</option>
-          ))}
-        </select>
+        {/* Use LocationSelector component */}
+        <LocationSelector
+          value={formData.location} // Pass the current location state
+          onChange={(locationData) => { // Use onChange prop
+            setFormData(prev => ({ ...prev, location: locationData }));
+            // Clear location error when a location is selected
+            if (errors.location) {
+              setErrors(prev => ({
+                ...prev,
+                location: ''
+              }));
+            }
+          }}
+          // Optional: Set readOnlyAddress prop
+          // readOnlyAddress={true}
+        />
         {errors.location && <p className="text-red-500 text-sm mt-1">{errors.location}</p>}
       </div>
 
@@ -421,6 +402,7 @@ export default function RegisterPage() {
     </div>
   );
 
+
   const renderStep4 = () => (
     <div className="text-center">
       <div className="text-6xl mb-4">🎉</div>
@@ -436,7 +418,7 @@ export default function RegisterPage() {
           <div>{formData.role === 'Hustler' ? '🎓' : '🧑‍💼'} <span className="font-medium">
             {formData.role}
           </span></div>
-          <div>📍 <span className="font-medium">{formData.location}</span></div>
+          <div>📍 <span className="font-medium">{formData.location?.upazila}, {formData.location?.district}, {formData.location?.division}</span></div> {/* Display location details */}
           {formData.role === 'Hustler' && formData.age && (
             <div>🎂 <span className="font-medium">{formData.age} years old</span></div>
           )}
@@ -474,54 +456,6 @@ export default function RegisterPage() {
             ) : (
               'Welcome to the community!'
             )}
-const renderStep3 = () => (
-  <div>
-    <div className="text-center mb-6">
-      <div className="text-3xl mb-2">📍</div>
-      <h2 className="text-2xl font-semibold text-gray-900 mb-2">Your Area</h2>
-      <p className="text-gray-600">This helps us find jobs near you</p>
-    </div>
-
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-2">Select your area</label>
-      {/* Replace the select dropdown with LocationSelector */}
-      <LocationSelector
-        onLocationSelect={(locationData) => {
-          setFormData(prev => ({ ...prev, location: locationData }));
-          // Clear location error when a location is selected
-          if (errors.location) {
-            setErrors(prev => ({
-              ...prev,
-              location: ''
-            }));
-          }
-        }}
-        // You might need to pass the current location data to the selector if you want to pre-populate it
-        // initialLocation={formData.location}
-      />
-      {errors.location && <p className="text-red-500 text-sm mt-1">{errors.location}</p>}
-    </div>
-
-    {formData.role === 'Hustler' && (
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Age</label>
-        <select
-          name="age"
-          value={formData.age || ''}
-          onChange={handleChange}
-          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.age ? 'border-red-500' : 'border-gray-300'
-            }`}
-        >
-          <option value="">Select your age</option>
-          {ageOptions.map(age => (
-            <option key={age} value={age}>{age} years old</option>
-          ))}
-        </select>
-        {errors.age && <p className="text-red-500 text-sm mt-1">{errors.age}</p>}\
-      </div>
-    )}
-  </div>
-);
           </p>
         </div>
 
@@ -581,4 +515,4 @@ const renderStep3 = () => (
       </div>
     </div>
   );
-} 
+}
