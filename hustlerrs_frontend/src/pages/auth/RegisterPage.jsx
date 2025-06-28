@@ -1,25 +1,18 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import LocationSelector from '../../common/LocationSelector';
+import LocationSelector from '../../common/LocationSelector'
 
 export default function RegisterPage() {
   const navigate = useNavigate();
   const { register } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
-    fullName: '',
-    email: '', // Add email field
-    phoneNumber: '', // Add phone number field
-    password: '',
-    confirmPassword: '',
-    role: 'Hustler', // default to hustler
-    location: '',
-    age: '',
-    businessName: '',
-    coordinates: {
-      type: 'Point',
-      coordinates: [null, null] // [longitude, latitude]
+    location: {
+      division: '',
+      district: '',
+      upazila: '',
+      address: ''
     }
   });
   const [errors, setErrors] = useState({});
@@ -27,10 +20,6 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const areas = [
-    'Mirpur', 'Dhanmondi', 'Gulshan', 'Banani', 'Uttara', 'Mohammadpur',
-    'Lalmatia', 'Shahbag', 'Ramna', 'Motijheel', 'Old Dhaka', 'Other'
-  ];
 
   const ageOptions = Array.from({ length: 50 }, (_, i) => i + 16); // 16-65 years
   const handleChange = (e) => {
@@ -70,19 +59,14 @@ export default function RegisterPage() {
         if (!formData.fullName.trim()) {
           newErrors.fullName = 'Name is required 😅';
         }
-        // Check email or phone number based on contactType
-        if (formData.contactType === 'email') {
-          if (!formData.email.trim()) {
-            newErrors.contactValue = 'Email is required 😅';
-          } else if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(formData.email)) {
-            newErrors.contactValue = 'Please enter a valid email 😅';
-          }
-        } else if (formData.contactType === 'phone') {
-          if (!formData.phoneNumber.trim()) {
-            newErrors.contactValue = 'Phone number is required 😅';
-          } else if (!/^(\\\\+880|880|0)?1[3-9]\\\\d{8}$/.test(formData.phoneNumber)) {
-            newErrors.contactValue = 'Please enter a valid BD phone number 😅';
-          }
+        if (!formData.contactValue.trim()) {
+          newErrors.contactValue = `${formData.contactType === 'phone' ? 'Phone' : 'Email'} is required 😅`;
+        }
+        if (formData.contactType === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.contactValue)) {
+          newErrors.contactValue = 'Please enter a valid email 😅';
+        }
+        if (formData.contactType === 'phone' && !/^(\\+880|880|0)?1[3-9]\\d{8}$/.test(formData.contactValue)) {
+          newErrors.contactValue = 'Please enter a valid BD phone number 😅';
         }
         if (!formData.password) {
           newErrors.password = 'Password is required 😅';
@@ -132,8 +116,12 @@ export default function RegisterPage() {
   };
 
   const handleSubmit = async () => {
+    console.log('handleSubmit called');
+    console.log('formData:', formData); // Add this line
+    //this is tesing of git
+    //this is git test
     const loc = formData.location;
-    
+  
     // Final validation check
     const finalValidation = validateStep(currentStep);
     if (!finalValidation) {
@@ -144,8 +132,9 @@ export default function RegisterPage() {
 
     // Additional check for required fields
     const missingFields = [];
-    if (!formData.fullName.trim()) missingFields.push('Full Name');
-    if (!formData.contactValue.trim()) missingFields.push('Contact Info');
+    // Add checks before trimming
+    if (!formData.fullName || !formData.fullName.trim()) missingFields.push('Full Name');
+    if (!formData.contactValue || !formData.contactValue.trim()) missingFields.push('Contact Info');
     if (!formData.password) missingFields.push('Password');
     if (!formData.location) missingFields.push('Location');
     if (formData.role === 'Hustler' && !formData.age) missingFields.push('Age');
@@ -164,23 +153,24 @@ export default function RegisterPage() {
         type: 'Point',
         coordinates: [null, null]
       };
-
-
-
-      if (areaCoordinates[formData.location]) {
-        coordinates.coordinates = areaCoordinates[formData.location];
-      }
-
+  
       // Prepare data for API
       const registerData = {
         fullName: formData.fullName.trim(),
         role: formData.role,
         password: formData.password,
-        ...(formData.contactType === 'email' && { email: formData.email }),
-        ...(formData.contactType === 'phone' && { phoneNumber: formData.phoneNumber }),
-        location: formData.location,
+        [formData.contactType]: formData.contactValue.trim(),
+  
+        // New Location Structure
+        location: {
+          division: loc.division,
+          district: loc.district,
+          upazila: loc.upazila,
+          address: loc.address
+        },
+  
         coordinates: coordinates,
-        // Role-specific fields
+  
         ...(formData.role === 'Hustler' && formData.age && {
           age: parseInt(formData.age)
         })
@@ -202,14 +192,15 @@ export default function RegisterPage() {
       setLoading(false);
     }
   };
+  
 
   const renderStepIndicator = () => (
     <div className="flex items-center justify-center mb-8">
       {[1, 2, 3].map((step) => (
         <div key={step} className="flex items-center">
           <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${step <= currentStep
-            ? 'bg-blue-600 text-white'
-            : 'bg-gray-200 text-gray-500'
+              ? 'bg-blue-600 text-white'
+              : 'bg-gray-200 text-gray-500'
             }`}>
             {step}
           </div>
@@ -233,8 +224,8 @@ export default function RegisterPage() {
           type="button"
           onClick={() => setFormData(prev => ({ ...prev, role: 'Hustler' }))}
           className={`w-full p-6 rounded-lg border-2 transition-all ${formData.role === 'Hustler'
-            ? 'border-blue-600 bg-blue-50'
-            : 'border-gray-200 hover:border-gray-300'
+              ? 'border-blue-600 bg-blue-50'
+              : 'border-gray-200 hover:border-gray-300'
             }`}
         >
           <div className="text-3xl mb-2">🎓</div>
@@ -246,8 +237,8 @@ export default function RegisterPage() {
           type="button"
           onClick={() => setFormData(prev => ({ ...prev, role: 'Job Giver' }))}
           className={`w-full p-6 rounded-lg border-2 transition-all ${formData.role === 'Job Giver'
-            ? 'border-blue-600 bg-blue-50'
-            : 'border-gray-200 hover:border-gray-300'
+              ? 'border-blue-600 bg-blue-50'
+              : 'border-gray-200 hover:border-gray-300'
             }`}
         >
           <div className="text-3xl mb-2">🧑‍💼</div>
@@ -278,18 +269,18 @@ export default function RegisterPage() {
               }`}
             placeholder="Enter your full name"
           />
-          {errors.fullName && <p className="text-red-500 text-sm mt-1">{errors.fullName}</p>}
+          {errors.fullName && <p className="text-red-500 text-sm mt-1">{errors.fullName}</p>}\
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Contact Info</label>
-          <div className="flex space-x-2 mb-2">
+          <div className="flex space-x-2 mb-2">\
             <button
               type="button"
               onClick={() => setFormData(prev => ({ ...prev, contactType: 'email', contactValue: '' }))}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${formData.contactType === 'email'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
             >
               📧 Email
@@ -298,8 +289,8 @@ export default function RegisterPage() {
               type="button"
               onClick={() => setFormData(prev => ({ ...prev, contactType: 'phone', contactValue: '' }))}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${formData.contactType === 'phone'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
             >
               📱 Phone
@@ -376,21 +367,16 @@ export default function RegisterPage() {
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">Select your area</label>
-        <LocationSelector
-          value={formData.location} // Pass the current location state
-          onChange={(locationData) => {
-            setFormData(prev => ({ ...prev, location: locationData }));
-            // Clear location error when a location is selected
-            if (errors.location) {
-              setErrors(prev => ({
-                ...prev,
-                location: ''
-              }));
-            }
-          }}
-        // Optional: Set readOnlyAddress prop
-        // readOnlyAddress={true}
-        />
+        <LocationSelector value={formData.location} onChange={(newlocation) => {
+          setFormData(prev => ({
+            ...prev,
+            location: newlocation
+          }));
+          //for clearing error
+          if (error.location) {
+            setErrors(prev => ({ ...prev, location: '' }));
+          }
+        }} />
         {errors.location && <p className="text-red-500 text-sm mt-1">{errors.location}</p>}
       </div>
 
@@ -431,7 +417,7 @@ export default function RegisterPage() {
           <div>{formData.role === 'Hustler' ? '🎓' : '🧑‍💼'} <span className="font-medium">
             {formData.role}
           </span></div>
-          <div>📍 <span className="font-medium">{formData.location}</span></div>
+          <div>📍 <span className="font-medium">{formData.location?.upazila}, {formData.location?.district}, {formData.location?.division}</span></div> {/* Display location details */}
           {formData.role === 'Hustler' && formData.age && (
             <div>🎂 <span className="font-medium">{formData.age} years old</span></div>
           )}
@@ -527,5 +513,4 @@ export default function RegisterPage() {
         </div>
       </div>
     </div>
-  );
-} 
+}

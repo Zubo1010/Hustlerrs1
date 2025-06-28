@@ -7,6 +7,12 @@ const mongoose = require('mongoose');
 const asyncHandler = require('express-async-handler');
 const { getLocationData } = require('../services/locationService');
 
+<<<<<<< HEAD
+
+
+
+=======
+>>>>>>> 5f2ac177a8f745873baecb12be55385565537d59
 
 // Configure multer for file upload
 const storage = multer.diskStorage({
@@ -133,7 +139,6 @@ exports.updateProfile = async (req, res) => {
     if (division && district && upazila && !getLocationData.isValidLocation(division, district, upazila)) {
       return res.status(400).json({ message: 'Invalid division, district, or upazila provided.' });
     }
-    
     // Role-specific updates
     const user = await User.findById(req.user.userId);
     if (user.role === 'Hustler') {
