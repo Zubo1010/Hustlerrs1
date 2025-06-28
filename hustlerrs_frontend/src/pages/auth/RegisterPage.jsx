@@ -8,13 +8,20 @@ export default function RegisterPage() {
   const { register } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
+    role: 'Hustler',
+    fullName: '',
+    contactType: 'email',     // ✅ Initialized to prevent undefined error
+    contactValue: '',         // ✅ Initialized to prevent undefined error
+    password: '',
+    confirmPassword: '',
+    age: '',
     location: {
       division: '',
       district: '',
       upazila: '',
       address: ''
     }
-  });
+  });;
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -25,11 +32,10 @@ export default function RegisterPage() {
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
 
-    // Handle contact info separately based on contactType
     if (name === 'contactValue') {
       setFormData(prev => ({
         ...prev,
-        [formData.contactType === 'email' ? 'email' : 'phoneNumber']: value.trim(), // Use contactType to set email or phoneNumber
+        contactValue: value
       }));
     } else {
       setFormData(prev => ({
@@ -38,7 +44,6 @@ export default function RegisterPage() {
       }));
     }
 
-    // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
@@ -46,7 +51,6 @@ export default function RegisterPage() {
       }));
     }
   };
-
   const validateStep = (step) => {
     const newErrors = {};
 
@@ -114,33 +118,35 @@ export default function RegisterPage() {
   const prevStep = () => {
     setCurrentStep(prev => prev - 1);
   };
-
   const handleSubmit = async () => {
     console.log('handleSubmit called');
-    console.log('formData:', formData); // Add this line
-    //this is tesing of git
-    //this is git test
-    const loc = formData.location;
-  
-    // Final validation check
+    console.log('formData:', formData); // Debug full form data
+
+    const loc = formData.location || {};
+    const { division, district, upazila, address } = loc;
+
+    // Validate current step fields first
     const finalValidation = validateStep(currentStep);
     if (!finalValidation) {
-      // Force re-validation to show all errors
+      // Show validation errors
       validateStep(currentStep);
       return;
     }
 
-    // Additional check for required fields
+    // Check for missing required fields before API call
     const missingFields = [];
-    // Add checks before trimming
     if (!formData.fullName || !formData.fullName.trim()) missingFields.push('Full Name');
     if (!formData.contactValue || !formData.contactValue.trim()) missingFields.push('Contact Info');
     if (!formData.password) missingFields.push('Password');
-    if (!formData.location) missingFields.push('Location');
+    if (!division?.trim()) missingFields.push('Division');
+    if (!district?.trim()) missingFields.push('District');
+    if (!upazila?.trim()) missingFields.push('Upazila');
+    if (!address?.trim()) missingFields.push('Address');
     if (formData.role === 'Hustler' && !formData.age) missingFields.push('Age');
 
     if (missingFields.length > 0) {
       setErrors({ submit: `Please fill in: ${missingFields.join(', ')}` });
+      setLoading(false);
       return;
     }
 
@@ -148,32 +154,31 @@ export default function RegisterPage() {
     setErrors({}); // Clear previous errors
 
     try {
-      // Get coordinates for the selected location
+      // Debug location fields before sending
+      console.log('Location values before sending:', { division, district, upazila, address });
+
+      // Prepare coordinates (update if you have real geo data)
       let coordinates = {
         type: 'Point',
-        coordinates: [null, null]
+        coordinates: [null, null],
       };
-  
-      // Prepare data for API
+
+      // Prepare registration payload
       const registerData = {
         fullName: formData.fullName.trim(),
         role: formData.role,
         password: formData.password,
         [formData.contactType]: formData.contactValue.trim(),
-  
-        // New Location Structure
         location: {
-          division: loc.division,
-          district: loc.district,
-          upazila: loc.upazila,
-          address: loc.address
+          division: division.trim(),
+          district: district.trim(),
+          upazila: upazila.trim(),
+          address: address.trim(),
         },
-  
-        coordinates: coordinates,
-  
+        coordinates,
         ...(formData.role === 'Hustler' && formData.age && {
-          age: parseInt(formData.age)
-        })
+          age: parseInt(formData.age, 10),
+        }),
       };
 
       console.log('Sending registration data:', registerData);
@@ -192,15 +197,14 @@ export default function RegisterPage() {
       setLoading(false);
     }
   };
-  
 
   const renderStepIndicator = () => (
     <div className="flex items-center justify-center mb-8">
       {[1, 2, 3].map((step) => (
         <div key={step} className="flex items-center">
           <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${step <= currentStep
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-200 text-gray-500'
+            ? 'bg-blue-600 text-white'
+            : 'bg-gray-200 text-gray-500'
             }`}>
             {step}
           </div>
@@ -224,8 +228,8 @@ export default function RegisterPage() {
           type="button"
           onClick={() => setFormData(prev => ({ ...prev, role: 'Hustler' }))}
           className={`w-full p-6 rounded-lg border-2 transition-all ${formData.role === 'Hustler'
-              ? 'border-blue-600 bg-blue-50'
-              : 'border-gray-200 hover:border-gray-300'
+            ? 'border-blue-600 bg-blue-50'
+            : 'border-gray-200 hover:border-gray-300'
             }`}
         >
           <div className="text-3xl mb-2">🎓</div>
@@ -237,8 +241,8 @@ export default function RegisterPage() {
           type="button"
           onClick={() => setFormData(prev => ({ ...prev, role: 'Job Giver' }))}
           className={`w-full p-6 rounded-lg border-2 transition-all ${formData.role === 'Job Giver'
-              ? 'border-blue-600 bg-blue-50'
-              : 'border-gray-200 hover:border-gray-300'
+            ? 'border-blue-600 bg-blue-50'
+            : 'border-gray-200 hover:border-gray-300'
             }`}
         >
           <div className="text-3xl mb-2">🧑‍💼</div>
@@ -279,8 +283,8 @@ export default function RegisterPage() {
               type="button"
               onClick={() => setFormData(prev => ({ ...prev, contactType: 'email', contactValue: '' }))}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${formData.contactType === 'email'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
             >
               📧 Email
@@ -289,8 +293,8 @@ export default function RegisterPage() {
               type="button"
               onClick={() => setFormData(prev => ({ ...prev, contactType: 'phone', contactValue: '' }))}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${formData.contactType === 'phone'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
             >
               📱 Phone
@@ -367,16 +371,19 @@ export default function RegisterPage() {
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">Select your area</label>
-        <LocationSelector value={formData.location} onChange={(newlocation) => {
-          setFormData(prev => ({
-            ...prev,
-            location: newlocation
-          }));
-          //for clearing error
-          if (error.location) {
-            setErrors(prev => ({ ...prev, location: '' }));
-          }
-        }} />
+        <LocationSelector
+          value={formData.location}
+          onChange={(newlocation) => {
+            setFormData(prev => ({
+              ...prev,
+              location: newlocation
+            }));
+            // Clear location error if present
+            if (errors.location) {
+              setErrors(prev => ({ ...prev, location: '' }));
+            }
+          }}
+        />
         {errors.location && <p className="text-red-500 text-sm mt-1">{errors.location}</p>}
       </div>
 

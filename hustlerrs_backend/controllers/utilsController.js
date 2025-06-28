@@ -1,21 +1,23 @@
-const axios = require('axios');
+const fs = require('fs').promises; // Use the promise-based fs module
 const path = require('path');
-const fs = require('fs');
+/**
+ * Controller to handle fetching location data from a JSON file.
+ * This controller reads the locations from a predefined JSON file
+ * and returns it as a response.
+ */
 
 
-exports.getLocations = (req, res) => {
-    const locationFilePath = path.join(__dirname, '../config/location_db.json');
-    fs.readFile(locationFilePath, 'utf8', (err, data) => {
-        if (err) {
-            console.error('Error reading location_db.json:', err);
-            return res.status(500).json({ message: 'Failed to load location data' });
-        }
-        try {
-            const locations = JSON.parse(data);
-            res.json(locations);
-        } catch (parseErr) {
-            console.error('Error parsing location_db.json:', parseErr);
-            res.status(500).json({ message: 'Failed to parse location data' });
-        }
-    });
+const getLocations = async (req, res) => {
+  try {
+    const dataPath = path.join(__dirname, '../config/location_db.json'); // Adjust path accordingly
+    const data = await fs.readFile(dataPath, 'utf-8');
+    const locations = JSON.parse(data);
+
+    res.status(200).json(locations);
+  } catch (error) {
+    console.error('Error fetching locations:', error.message);
+    res.status(500).json({ error: 'Failed to load location data.' });
+  }
 };
+
+module.exports = { getLocations };

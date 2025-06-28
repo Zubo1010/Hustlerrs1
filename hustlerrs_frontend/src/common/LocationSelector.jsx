@@ -1,99 +1,146 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import locationService from '../services/locationService';
 
-const LocationSelector = ({ value, onChange, readOnlyAddress = true }) => {
+const LocationSelector = ({ value, onChange, readOnlyAddress = false }) => {
   const [locations, setLocations] = useState([]);
   const [division, setDivision] = useState(value?.division || '');
   const [district, setDistrict] = useState(value?.district || '');
   const [upazila, setUpazila] = useState(value?.upazila || '');
   const [address, setAddress] = useState(value?.address || '');
 
-
   useEffect(() => {
-    axios.get('/utils/locations')
-      .then(res => setLocations(res.data.divisions || []))
-      .catch(() => setLocations([]));
+    // Fetch all divisions, districts, upazilas
+    locationService.getLocations()
+      .then(res => setLocations(res.divisions || []))
+      .catch(err => {
+        console.error('Failed to fetch locations:', err);
+        setLocations([]);
+      });
   }, []);
 
   const handleDivisionChange = (e) => {
-    setDivision(e.target.value);
+    const newDivision = e.target.value;
+    setDivision(newDivision);
     setDistrict('');
     setUpazila('');
+    triggerOnChange({ division: newDivision, district: '', upazila: '', address });
   };
-  const handleDistrictChange = (e) => {
-    setDistrict(e.target.value);
 
+  const handleDistrictChange = (e) => {
+    const newDistrict = e.target.value;
+    setDistrict(newDistrict);
+    setUpazila('');
+    triggerOnChange({ division, district: newDistrict, upazila: '', address });
   };
 
   const handleUpazilaChange = async (e) => {
-    setUpazila(e.target.value);
     const selectedUpazila = e.target.value;
-    setUpazila('');
-    onChange && onChange({ division, district: e.target.value, upazila: '', address });
-
+    setUpazila(selectedUpazila);
+  
     if (division && district && selectedUpazila) {
       try {
         const isValid = await locationService.validateLocation(division, district, selectedUpazila);
- if (!isValid) {
-          alert('Invalid location selected. Please choose from the available options.'); // Or a more user-friendly toast/modal
-          return; // Prevent updating the state if validation fails
- }
+        if (!isValid) {
+          alert('Invalid location selected. Please choose from the available options.');
+          // Optionally reset upazila if invalid
+          setUpazila('');
+          return;
+        }
       } catch (error) {
         console.error('Location validation failed:', error);
+        // Optionally show user-friendly message or ignore
       }
     }
-
-    // Only call onChange if validation passes or if no upazila is selected yet
+  
     onChange && onChange({ division, district, upazila: selectedUpazila, address });
- };
-
-  const handleAddressChange = (e) => {
-    setAddress(e.target.value);
-    // Call onChange whenever address changes, preserving current selections
-    onChange && onChange({ division, district, upazila, address: e.target.value });
   };
 
+  const handleAddressChange = (e) => {
+    const newAddress = e.target.value;
+    setAddress(newAddress);
+    triggerOnChange({ division, district, upazila, address: newAddress });
+  };
+
+  // Helper to call onChange prop with updated location
+  const triggerOnChange = (newLocation) => {
+    onChange && onChange(newLocation);
+  };
+
+  // Find current division, districts and upazilas for dropdown options
   const divisionObj = locations.find(d => d.division_name === division);
   const districts = divisionObj ? divisionObj.districts : [];
   const districtObj = districts.find(d => d.district_name === district);
   const upazilas = districtObj ? districtObj.upazilas : [];
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-4">
       <div>
         <label className="block text-sm font-medium text-gray-700">Division</label>
-        <select value={division || ''} onChange={handleDivisionChange} className="input" required>
+        <select
+          value={division}
+          onChange={handleDivisionChange}
+          className="input"
+          required
+        >
           <option value="">Select Division</option>
           {locations.map(div => (
-            <option key={div.division_name} value={div.division_name}>{div.division_name}</option>
+            <option key={div.division_name} value={div.division_name}>
+              {div.division_name}
+            </option>
           ))}
         </select>
       </div>
+
       <div>
         <label className="block text-sm font-medium text-gray-700">District</label>
-        <select value={district || ''} onChange={handleDistrictChange} className="input" required disabled={!division}>
+        <select
+          value={district}
+          onChange={handleDistrictChange}
+          className="input"
+          required
+          disabled={!division}
+        >
           <option value="">Select District</option>
           {districts.map(dist => (
-            <option key={dist.district_name} value={dist.district_name}>{dist.district_name}</option>
+            <option key={dist.district_name} value={dist.district_name}>
+              {dist.district_name}
+            </option>
           ))}
         </select>
       </div>
+
       <div>
         <label className="block text-sm font-medium text-gray-700">Upazila</label>
-        <select value={upazila || ''} onChange={handleUpazilaChange} className="input" required disabled={!district}>
+        <select
+          value={upazila}
+          onChange={handleUpazilaChange}
+          className="input"
+          required
+          disabled={!district}
+        >
           <option value="">Select Upazila</option>
           {upazilas.map(upz => (
-            <option key={upz} value={upz}>{upz}</option>
+            <option key={upz} value={upz}>
+              {upz}
+            </option>
           ))}
         </select>
       </div>
+
       <div>
         <label className="block text-sm font-medium text-gray-700">Address</label>
-        <input type="text" value={address || ''} onChange={handleAddressChange} className="input" required />
+        <input
+          type="text"
+          value={address}
+          onChange={handleAddressChange}
+          className="input"
+          required
+          readOnly={readOnlyAddress}
+          placeholder={readOnlyAddress ? 'Address is read-only' : 'Enter your address'}
+        />
       </div>
     </div>
   );
 };
 
-export default LocationSelector; 
+export default LocationSelector;
