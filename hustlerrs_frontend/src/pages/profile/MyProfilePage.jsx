@@ -82,6 +82,7 @@ const MyProfilePage = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                             <p><span className="font-medium text-gray-600">Email:</span> {email}</p>
                             <p><span className="font-medium text-gray-600">Phone:</span> {phone}</p>
+ <p><span className="font-medium text-gray-600">Address:</span> {profile.address}</p>
                         </div>
                     </div>
                     
