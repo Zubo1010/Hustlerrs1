@@ -21,7 +21,7 @@ const LocationSelector = ({ value, onChange, readOnlyAddress = true }) => {
   };
   const handleDistrictChange = (e) => {
     setDistrict(e.target.value);
- setUpazila('');
+    setUpazila('');
     onChange && onChange({ division, district: e.target.value, upazila: '', address });
   };
   const handleUpazilaChange = (e) => {
@@ -44,7 +44,7 @@ const LocationSelector = ({ value, onChange, readOnlyAddress = true }) => {
     <div className="space-y-2">
       <div>
         <label className="block text-sm font-medium text-gray-700">Division</label>
-        <select value={division} onChange={handleDivisionChange} className="input" required>
+        <select value={division || ''} onChange={handleDivisionChange} className="input" required>
           <option value="">Select Division</option>
           {locations.map(div => (
             <option key={div.division_name} value={div.division_name}>{div.division_name}</option>
@@ -53,7 +53,7 @@ const LocationSelector = ({ value, onChange, readOnlyAddress = true }) => {
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-700">District</label>
-        <select value={district} onChange={handleDistrictChange} className="input" required disabled={!division}>
+        <select value={district || ''} onChange={handleDistrictChange} className="input" required disabled={!division}>
           <option value="">Select District</option>
           {districts.map(dist => (
             <option key={dist.district_name} value={dist.district_name}>{dist.district_name}</option>
@@ -62,7 +62,7 @@ const LocationSelector = ({ value, onChange, readOnlyAddress = true }) => {
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-700">Upazila</label>
-        <select value={upazila} onChange={handleUpazilaChange} className="input" required disabled={!district}>
+        <select value={upazila || ''} onChange={handleUpazilaChange} className="input" required disabled={!district}>
           <option value="">Select Upazila</option>
           {upazilas.map(upz => (
             <option key={upz} value={upz}>{upz}</option>
@@ -71,7 +71,7 @@ const LocationSelector = ({ value, onChange, readOnlyAddress = true }) => {
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-700">Address</label>
-        <input type="text" value={address} onChange={handleAddressChange} className="input" required />
+        <input type="text" value={address || ''} onChange={handleAddressChange} className="input" required />
       </div>
     </div>
   );
