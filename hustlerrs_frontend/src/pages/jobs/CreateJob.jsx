@@ -5,7 +5,7 @@ import { createJob } from '../../services/jobService'; // Assuming this service 
 import { FiBriefcase, FiMapPin, FiClock, FiDollarSign, FiUser, FiCheckSquare, FiCamera, FiPhone, FiMail } from 'react-icons/fi';
 import LocationSelector from '../../common/LocationSelector'; // Import LocationSelector
 import { FaRegBuilding, FaPlus } from 'react-icons/fa';
-import LocationSelector from '../../common/LocationSelector'; // Import LocationSelector
+
 
 const SectionHeader = ({ icon, title }) => (
     <div className="flex items-center space-x-3 mb-4">

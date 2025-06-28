@@ -7,12 +7,7 @@ const mongoose = require('mongoose');
 const asyncHandler = require('express-async-handler');
 const { getLocationData } = require('../services/locationService');
 
-<<<<<<< HEAD
 
-
-
-=======
->>>>>>> 5f2ac177a8f745873baecb12be55385565537d59
 
 // Configure multer for file upload
 const storage = multer.diskStorage({
