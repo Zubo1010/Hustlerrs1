@@ -23,19 +23,14 @@ const LocationSelector = ({ value, onChange, readOnlyAddress = true }) => {
   };
   const handleDistrictChange = (e) => {
     setDistrict(e.target.value);
-<<<<<<< HEAD
- setUpazila('');
-    // No validation here yet, will validate after upazila is selected
- onChange && onChange({ division, district: e.target.value, upazila: '', address });
-=======
-    setUpazila('');
-    onChange && onChange({ division, district: e.target.value, upazila: '', address });
->>>>>>> 5f2ac177a8f745873baecb12be55385565537d59
+
   };
 
   const handleUpazilaChange = async (e) => {
     setUpazila(e.target.value);
     const selectedUpazila = e.target.value;
+    setUpazila('');
+    onChange && onChange({ division, district: e.target.value, upazila: '', address });
 
     if (division && district && selectedUpazila) {
       try {
