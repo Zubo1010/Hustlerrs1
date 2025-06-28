@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { validateLocation } from '../services/locationService';
+import locationService from '../services/locationService';
 
 const LocationSelector = ({ value, onChange, readOnlyAddress = true }) => {
   const [locations, setLocations] = useState([]);
@@ -34,7 +34,7 @@ const LocationSelector = ({ value, onChange, readOnlyAddress = true }) => {
 
     if (division && district && selectedUpazila) {
       try {
-        const isValid = await validateLocation(division, district, selectedUpazila);
+        const isValid = await locationService.validateLocation(division, district, selectedUpazila);
  if (!isValid) {
           alert('Invalid location selected. Please choose from the available options.'); // Or a more user-friendly toast/modal
           return; // Prevent updating the state if validation fails
