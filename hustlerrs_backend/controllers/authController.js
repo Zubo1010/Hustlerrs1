@@ -4,13 +4,17 @@ const jwt = require('jsonwebtoken');
 
 const registerUser = async (req, res) => {
   try {
-    const { fullName, email, phone, password, role, division, district, upazila, address, age } = req.body;
+    const { fullName, email, phone, password, role, location, age } = req.body;
 
     if (!email && !phone) {
-        return res.status(400).json({ message: 'Email or phone number is required.' });
+      return res.status(400).json({ message: 'Email or phone number is required.' });
     }
+
+    // Extract location fields safely
+    const { division, district, upazila, address } = location || {};
+
     if (!division || !district || !upazila || !address) {
-        return res.status(400).json({ message: 'Division, district, upazila, and address are required.' });
+      return res.status(400).json({ message: 'Division, district, upazila, and address are required.' });
     }
 
     // check if user already exists
@@ -32,7 +36,7 @@ const registerUser = async (req, res) => {
       division,
       district,
       upazila,
-      address
+      address,
     };
 
     if (email) newUser.email = email;
@@ -57,8 +61,8 @@ const registerUser = async (req, res) => {
         fullName: savedUser.fullName,
         email: savedUser.email,
         phone: savedUser.phone,
-        role: savedUser.role
-      }
+        role: savedUser.role,
+      },
     });
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });

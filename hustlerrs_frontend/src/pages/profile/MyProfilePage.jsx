@@ -58,12 +58,12 @@ const MyProfilePage = () => {
                     <h1 className="text-2xl font-bold">{fullName}</h1>
                     <p className="text-blue-200">{role}</p>
                 </div>
-                
+
                 <div className="p-6">
                     <div className="flex flex-col md:flex-row items-center md:items-start text-center md:text-left">
-                        <img 
+                        <img
                             src={profilePicture ? `http://localhost:5000${profilePicture}` : 'https://via.placeholder.com/150'}
-                            alt="Profile" 
+                            alt="Profile"
                             className="w-32 h-32 rounded-full border-4 border-white -mt-16 shadow-lg"
                         />
                         <div className="md:ml-6 mt-4 md:mt-0">
@@ -82,17 +82,17 @@ const MyProfilePage = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                             <p><span className="font-medium text-gray-600">Email:</span> {email}</p>
                             <p><span className="font-medium text-gray-600">Phone:</span> {phone}</p>
- <p><span className="font-medium text-gray-600">Address:</span> {profile.address}</p>
+                            <p><span className="font-medium text-gray-600">Address:</span> {profile.address}</p>
                         </div>
                     </div>
-                    
+
                     {bio && (
                         <div className="mt-6 border-t pt-6">
                             <h3 className="text-lg font-semibold text-gray-800 mb-4">About Me</h3>
                             <p className="text-gray-700">{bio}</p>
                         </div>
                     )}
-                    
+
                     {role === 'Hustler' && skills && skills.length > 0 && (
                         <div className="mt-6 border-t pt-6">
                             <h3 className="text-lg font-semibold text-gray-800 mb-4">Skills</h3>
