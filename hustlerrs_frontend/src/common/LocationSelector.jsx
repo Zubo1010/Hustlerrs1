@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { validateLocation } from '../services/locationService';
 
 const LocationSelector = ({ value, onChange, readOnlyAddress = true }) => {
   const [locations, setLocations] = useState([]);
@@ -7,6 +8,7 @@ const LocationSelector = ({ value, onChange, readOnlyAddress = true }) => {
   const [district, setDistrict] = useState(value?.district || '');
   const [upazila, setUpazila] = useState(value?.upazila || '');
   const [address, setAddress] = useState(value?.address || '');
+
 
   useEffect(() => {
     axios.get('/api/utils/locations')
@@ -22,12 +24,29 @@ const LocationSelector = ({ value, onChange, readOnlyAddress = true }) => {
   const handleDistrictChange = (e) => {
     setDistrict(e.target.value);
  setUpazila('');
-    onChange && onChange({ division, district: e.target.value, upazila: '', address });
+    // No validation here yet, will validate after upazila is selected
+ onChange && onChange({ division, district: e.target.value, upazila: '', address });
   };
-  const handleUpazilaChange = (e) => {
+
+  const handleUpazilaChange = async (e) => {
     setUpazila(e.target.value);
-    onChange && onChange({ division, district, upazila: e.target.value, address });
-  };
+    const selectedUpazila = e.target.value;
+
+    if (division && district && selectedUpazila) {
+      try {
+        const isValid = await validateLocation(division, district, selectedUpazila);
+ if (!isValid) {
+          alert('Invalid location selected. Please choose from the available options.'); // Or a more user-friendly toast/modal
+          return; // Prevent updating the state if validation fails
+ }
+      } catch (error) {
+        console.error('Location validation failed:', error);
+      }
+    }
+
+    // Only call onChange if validation passes or if no upazila is selected yet
+    onChange && onChange({ division, district, upazila: selectedUpazila, address });
+ };
 
   const handleAddressChange = (e) => {
     setAddress(e.target.value);
