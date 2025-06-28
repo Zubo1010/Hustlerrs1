@@ -1,18 +1,25 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import LocationSelector from '../../common/LocationSelector'
+import LocationSelector from '../../common/LocationSelector';
 
 export default function RegisterPage() {
   const navigate = useNavigate();
   const { register } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
-    location: {
-      division: '',
-      district: '',
-      upazila: '',
-      address: ''
+    fullName: '',
+    email: '', // Add email field
+    phoneNumber: '', // Add phone number field
+    password: '',
+    confirmPassword: '',
+    role: 'Hustler', // default to hustler
+    location: '',
+    age: '',
+    businessName: '',
+    coordinates: {
+      type: 'Point',
+      coordinates: [null, null] // [longitude, latitude]
     }
   });
   const [errors, setErrors] = useState({});
@@ -20,15 +27,27 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  const areas = [
+    'Mirpur', 'Dhanmondi', 'Gulshan', 'Banani', 'Uttara', 'Mohammadpur',
+    'Lalmatia', 'Shahbag', 'Ramna', 'Motijheel', 'Old Dhaka', 'Other'
+  ];
 
   const ageOptions = Array.from({ length: 50 }, (_, i) => i + 16); // 16-65 years
-
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
+
+    // Handle contact info separately based on contactType
+    if (name === 'contactValue') {
+      setFormData(prev => ({
+        ...prev,
+        [formData.contactType === 'email' ? 'email' : 'phoneNumber']: value.trim(), // Use contactType to set email or phoneNumber
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: type === 'checkbox' ? checked : value
+      }));
+    }
 
     // Clear error when user starts typing
     if (errors[name]) {
@@ -51,14 +70,19 @@ export default function RegisterPage() {
         if (!formData.fullName.trim()) {
           newErrors.fullName = 'Name is required 😅';
         }
-        if (!formData.contactValue.trim()) {
-          newErrors.contactValue = `${formData.contactType === 'phone' ? 'Phone' : 'Email'} is required 😅`;
-        }
-        if (formData.contactType === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.contactValue)) {
-          newErrors.contactValue = 'Please enter a valid email 😅';
-        }
-        if (formData.contactType === 'phone' && !/^(\\+880|880|0)?1[3-9]\\d{8}$/.test(formData.contactValue)) {
-          newErrors.contactValue = 'Please enter a valid BD phone number 😅';
+        // Check email or phone number based on contactType
+        if (formData.contactType === 'email') {
+          if (!formData.email.trim()) {
+            newErrors.contactValue = 'Email is required 😅';
+          } else if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(formData.email)) {
+            newErrors.contactValue = 'Please enter a valid email 😅';
+          }
+        } else if (formData.contactType === 'phone') {
+          if (!formData.phoneNumber.trim()) {
+            newErrors.contactValue = 'Phone number is required 😅';
+          } else if (!/^(\\\\+880|880|0)?1[3-9]\\\\d{8}$/.test(formData.phoneNumber)) {
+            newErrors.contactValue = 'Please enter a valid BD phone number 😅';
+          }
         }
         if (!formData.password) {
           newErrors.password = 'Password is required 😅';
@@ -73,8 +97,8 @@ export default function RegisterPage() {
         break;
 
       case 3:
-        if(!formData.location || !formData.location.division || !formData.location.district || !formData.location.upazila) {
-          newErrors.location = 'Please select a valid location 😅';
+        if (!formData.location) {
+          newErrors.location = 'Please select your area 😅';
         }
         if (formData.role === 'Hustler') {
           if (!formData.age) {
@@ -109,63 +133,63 @@ export default function RegisterPage() {
 
   const handleSubmit = async () => {
     const loc = formData.location;
-  
+    
     // Final validation check
     const finalValidation = validateStep(currentStep);
     if (!finalValidation) {
+      // Force re-validation to show all errors
       validateStep(currentStep);
       return;
     }
-  
+
     // Additional check for required fields
     const missingFields = [];
     if (!formData.fullName.trim()) missingFields.push('Full Name');
     if (!formData.contactValue.trim()) missingFields.push('Contact Info');
     if (!formData.password) missingFields.push('Password');
-    if (!loc || !loc.division || !loc.district || !loc.upazila) missingFields.push('Location');
+    if (!formData.location) missingFields.push('Location');
     if (formData.role === 'Hustler' && !formData.age) missingFields.push('Age');
-  
+
     if (missingFields.length > 0) {
       setErrors({ submit: `Please fill in: ${missingFields.join(', ')}` });
       return;
     }
-  
+
     setLoading(true);
     setErrors({}); // Clear previous errors
-  
+
     try {
-      // Dummy coordinates – later you can use real reverse geocoding
+      // Get coordinates for the selected location
       let coordinates = {
         type: 'Point',
-        coordinates: [null, null] // optional now
+        coordinates: [null, null]
       };
-  
+
+
+
+      if (areaCoordinates[formData.location]) {
+        coordinates.coordinates = areaCoordinates[formData.location];
+      }
+
       // Prepare data for API
       const registerData = {
         fullName: formData.fullName.trim(),
         role: formData.role,
         password: formData.password,
-        [formData.contactType]: formData.contactValue.trim(),
-  
-        // New Location Structure
-        location: {
-          division: loc.division,
-          district: loc.district,
-          upazila: loc.upazila,
-          address: loc.address
-        },
-  
+        ...(formData.contactType === 'email' && { email: formData.email }),
+        ...(formData.contactType === 'phone' && { phoneNumber: formData.phoneNumber }),
+        location: formData.location,
         coordinates: coordinates,
-  
+        // Role-specific fields
         ...(formData.role === 'Hustler' && formData.age && {
           age: parseInt(formData.age)
         })
       };
-  
+
       console.log('Sending registration data:', registerData);
-  
+
       const result = await register(registerData);
-  
+
       if (result.success) {
         setCurrentStep(4); // Show success step
       } else {
@@ -178,15 +202,14 @@ export default function RegisterPage() {
       setLoading(false);
     }
   };
-  
 
   const renderStepIndicator = () => (
     <div className="flex items-center justify-center mb-8">
       {[1, 2, 3].map((step) => (
         <div key={step} className="flex items-center">
           <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${step <= currentStep
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-200 text-gray-500'
+            ? 'bg-blue-600 text-white'
+            : 'bg-gray-200 text-gray-500'
             }`}>
             {step}
           </div>
@@ -210,8 +233,8 @@ export default function RegisterPage() {
           type="button"
           onClick={() => setFormData(prev => ({ ...prev, role: 'Hustler' }))}
           className={`w-full p-6 rounded-lg border-2 transition-all ${formData.role === 'Hustler'
-              ? 'border-blue-600 bg-blue-50'
-              : 'border-gray-200 hover:border-gray-300'
+            ? 'border-blue-600 bg-blue-50'
+            : 'border-gray-200 hover:border-gray-300'
             }`}
         >
           <div className="text-3xl mb-2">🎓</div>
@@ -223,8 +246,8 @@ export default function RegisterPage() {
           type="button"
           onClick={() => setFormData(prev => ({ ...prev, role: 'Job Giver' }))}
           className={`w-full p-6 rounded-lg border-2 transition-all ${formData.role === 'Job Giver'
-              ? 'border-blue-600 bg-blue-50'
-              : 'border-gray-200 hover:border-gray-300'
+            ? 'border-blue-600 bg-blue-50'
+            : 'border-gray-200 hover:border-gray-300'
             }`}
         >
           <div className="text-3xl mb-2">🧑‍💼</div>
@@ -249,7 +272,7 @@ export default function RegisterPage() {
           <input
             type="text"
             name="fullName"
-            value={formData.fullName || ''}
+            value={formData.fullName}
             onChange={handleChange}
             className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.fullName ? 'border-red-500' : 'border-gray-300'
               }`}
@@ -265,8 +288,8 @@ export default function RegisterPage() {
               type="button"
               onClick={() => setFormData(prev => ({ ...prev, contactType: 'email', contactValue: '' }))}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${formData.contactType === 'email'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
             >
               📧 Email
@@ -275,8 +298,8 @@ export default function RegisterPage() {
               type="button"
               onClick={() => setFormData(prev => ({ ...prev, contactType: 'phone', contactValue: '' }))}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${formData.contactType === 'phone'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
             >
               📱 Phone
@@ -300,7 +323,7 @@ export default function RegisterPage() {
             <input
               type={showPassword ? 'text' : 'password'}
               name="password"
-              value={formData.password || ''}
+              value={formData.password}
               onChange={handleChange}
               className={`w-full px-4 py-3 pr-12 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.password ? 'border-red-500' : 'border-gray-300'
                 }`}
@@ -353,16 +376,21 @@ export default function RegisterPage() {
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">Select your area</label>
-        <LocationSelector value={formData.location} onChange={(newlocation) => {
-          setFormData(prev => ({
-            ...prev,
-            location: newlocation
-          }));
-          //for clearing error
-          if (error.location) {
-            setErrors(prev => ({ ...prev, location: '' }));
-          }
-        }} />
+        <LocationSelector
+          value={formData.location} // Pass the current location state
+          onChange={(locationData) => {
+            setFormData(prev => ({ ...prev, location: locationData }));
+            // Clear location error when a location is selected
+            if (errors.location) {
+              setErrors(prev => ({
+                ...prev,
+                location: ''
+              }));
+            }
+          }}
+        // Optional: Set readOnlyAddress prop
+        // readOnlyAddress={true}
+        />
         {errors.location && <p className="text-red-500 text-sm mt-1">{errors.location}</p>}
       </div>
 
@@ -381,11 +409,12 @@ export default function RegisterPage() {
               <option key={age} value={age}>{age} years old</option>
             ))}
           </select>
-          {errors.age && <p className="text-red-500 text-sm mt-1">{errors.age}</p>}
+          {errors.age && <p className="text-red-500 text-sm mt-1">{errors.age}</p>}\
         </div>
       )}
     </div>
   );
+
 
   const renderStep4 = () => (
     <div className="text-center">
