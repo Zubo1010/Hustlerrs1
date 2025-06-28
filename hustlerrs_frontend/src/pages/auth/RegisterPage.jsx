@@ -69,9 +69,7 @@ export default function RegisterPage() {
         if (!formData.fullName.trim()) {
           newErrors.fullName = 'Name is required 😅';
         }
-        if (!formData.contactValue.trim()) {
-          newErrors.contactValue = `${formData.contactType === 'phone' ? 'Phone' : 'Email'} is required 😅`;
-        }
+        // Check email or phone number based on contactType
         if (formData.contactType === 'email') {
           if (!formData.email.trim()) {
             newErrors.contactValue = 'Email is required 😅';
@@ -79,7 +77,7 @@ export default function RegisterPage() {
             newErrors.contactValue = 'Please enter a valid email 😅';
           }
         } else if (formData.contactType === 'phone') {
-          if (!formData.phoneNumber.trim()) {
+           if (!formData.phoneNumber.trim()) {
             newErrors.contactValue = 'Phone number is required 😅';
           } else if (!/^(\\\\+880|880|0)?1[3-9]\\\\d{8}$/.test(formData.phoneNumber)) {
             newErrors.contactValue = 'Please enter a valid BD phone number 😅';
