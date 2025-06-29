@@ -3,6 +3,15 @@
 import api from './api'; // Assuming you have an api service configured
 
 const locationService = {
+  getLocations: async () => {
+    try {
+      const response = await api.get('utils/locations');; // adjust if needed
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching locations:', error);
+      throw error;
+    }
+  },
   validateLocation: async (division, district, upazila) => {
     try {
       const response = await api.post('/api/location/validate', {

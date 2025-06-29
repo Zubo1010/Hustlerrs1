@@ -9,16 +9,17 @@ const HustlerApplicationSchema = new mongoose.Schema({
         type: Number,
         required: true,
     },
-    address: {
-        type: String,
-        required: true,
-    },
+    
     latitude: {
- type: Number,
+        type: Number,
     },
     longitude: {
- type: Number,
+        type: Number,
     },
+    division: { type: String, required: true },    // add
+    district: { type: String, required: true },    // add
+    upazila: { type: String, required: true },
+    address: { type: String, required: true },
     nidOrBirthCertificate: {
         type: String, // Path to the uploaded image
         required: true,
