@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import locationService from '../services/locationService';
 
-const LocationSelector = ({ value, onChange, readOnlyAddress = false }) => {
+const LocationSelector = ({ value, onChange, onValidationChange, readOnlyAddress = false }) => {
   const [locations, setLocations] = useState([]);
   const [division, setDivision] = useState(value?.division || '');
   const [district, setDistrict] = useState(value?.district || '');
   const [upazila, setUpazila] = useState(value?.upazila || '');
   const [address, setAddress] = useState(value?.address || '');
-
+  
   useEffect(() => {
     // Fetch all divisions, districts, upazilas
     locationService.getLocations()
@@ -17,6 +17,28 @@ const LocationSelector = ({ value, onChange, readOnlyAddress = false }) => {
         setLocations([]);
       });
   }, []);
+  // Whenever area or address changes, notify parent about validity & value
+  useEffect(() => {
+    const isValid =
+      division.trim() !== '' &&
+      district.trim() !== '' &&
+      upazila.trim() !== '' &&
+      address.trim() !== '';
+  
+    onValidationChange && onValidationChange(isValid);
+  }, [division, district, upazila, address, onValidationChange]);
+  
+  useEffect(() => {
+    const area = `${division}, ${district}, ${upazila}`;  // define area here
+  
+    if (onChange) {
+      onChange({
+        area,
+        address,
+      });
+    }
+  }, [division, district, upazila, address, onChange]);
+
 
   const handleDivisionChange = (e) => {
     const newDivision = e.target.value;
