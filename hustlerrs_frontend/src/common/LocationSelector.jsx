@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import locationService from '../services/locationService';
 
-const LocationSelector = ({ value, onChange, onValidationChange, readOnlyAddress = false }) => {
+const LocationSelector = ({ value, onChange, onValidationChange, onLocationChange, readOnlyAddress = false }) => {
   const [locations, setLocations] = useState([]);
   const [division, setDivision] = useState(value?.division || '');
   const [district, setDistrict] = useState(value?.district || '');
   const [upazila, setUpazila] = useState(value?.upazila || '');
   const [address, setAddress] = useState(value?.address || '');
-  
+
   useEffect(() => {
     // Fetch all divisions, districts, upazilas
     locationService.getLocations()
@@ -17,6 +17,7 @@ const LocationSelector = ({ value, onChange, onValidationChange, readOnlyAddress
         setLocations([]);
       });
   }, []);
+
   // Whenever area or address changes, notify parent about validity & value
   useEffect(() => {
     const isValid =
@@ -24,68 +25,61 @@ const LocationSelector = ({ value, onChange, onValidationChange, readOnlyAddress
       district.trim() !== '' &&
       upazila.trim() !== '' &&
       address.trim() !== '';
-  
+
     onValidationChange && onValidationChange(isValid);
   }, [division, district, upazila, address, onValidationChange]);
-  
+
+  // Single useEffect to handle onChange - this replaces the problematic second useEffect
   useEffect(() => {
-    const area = `${division}, ${district}, ${upazila}`;  // define area here
-  
     if (onChange) {
+      const area = `${division}, ${district}, ${upazila}`;
       onChange({
+        division,
+        district, 
+        upazila,
         area,
         address,
       });
     }
-  }, [division, district, upazila, address, onChange]);
-
+    
+    // Also call onLocationChange if provided (for backward compatibility)
+    if (onLocationChange) {
+      const area = `${division}, ${district}, ${upazila}`;
+      onLocationChange({
+        division,
+        district, 
+        upazila,
+        area,
+        address,
+      });
+    }
+  }, [division, district, upazila, address, onChange, onLocationChange]);
 
   const handleDivisionChange = (e) => {
     const newDivision = e.target.value;
     setDivision(newDivision);
     setDistrict('');
     setUpazila('');
-    triggerOnChange({ division: newDivision, district: '', upazila: '', address });
+    // Remove triggerOnChange call - useEffect will handle it
   };
 
   const handleDistrictChange = (e) => {
     const newDistrict = e.target.value;
     setDistrict(newDistrict);
     setUpazila('');
-    triggerOnChange({ division, district: newDistrict, upazila: '', address });
+    // Remove triggerOnChange call - useEffect will handle it
   };
 
-  const handleUpazilaChange = async (e) => {
+  const handleUpazilaChange = (e) => {
     const selectedUpazila = e.target.value;
     setUpazila(selectedUpazila);
-  
-    if (division && district && selectedUpazila) {
-      try {
-        const isValid = await locationService.validateLocation(division, district, selectedUpazila);
-        if (!isValid) {
-          alert('Invalid location selected. Please choose from the available options.');
-          // Optionally reset upazila if invalid
-          setUpazila('');
-          return;
-        }
-      } catch (error) {
-        console.error('Location validation failed:', error);
-        // Optionally show user-friendly message or ignore
-      }
-    }
-  
-    onChange && onChange({ division, district, upazila: selectedUpazila, address });
+    // Remove direct onChange call - useEffect will handle it
   };
 
   const handleAddressChange = (e) => {
     const newAddress = e.target.value;
     setAddress(newAddress);
-    triggerOnChange({ division, district, upazila, address: newAddress });
-  };
-
-  // Helper to call onChange prop with updated location
-  const triggerOnChange = (newLocation) => {
-    onChange && onChange(newLocation);
+    // Remove triggerOnChange call - useEffect will handle it
   };
 
   // Find current division, districts and upazilas for dropdown options
