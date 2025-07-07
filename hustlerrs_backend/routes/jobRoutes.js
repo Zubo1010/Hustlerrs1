@@ -11,6 +11,7 @@ const {
     acceptBid,
     rejectBid,
     getJobApplications,
+    acceptJob
 } = require('../controllers/jobController');
 const { protect, authorizeRole } = require('../middleware/authMiddleware');
 
@@ -35,5 +36,8 @@ router.get('/:id/applications', protect, authorizeRole(['Job Giver']), getJobApp
 // Bid management routes (must be initiated by job giver)
 router.put('/:jobId/bids/:bidId/accept', protect, authorizeRole(['Job Giver']), acceptBid);
 router.put('/:jobId/bids/:bidId/reject', protect, authorizeRole(['Job Giver']), rejectBid);
+
+// Accept a job
+router.post('/:jobId/accept', protect, acceptJob);
 
 module.exports = router;

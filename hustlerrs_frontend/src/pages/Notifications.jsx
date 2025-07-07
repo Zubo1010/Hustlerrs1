@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { getProfilePictureUrl } from '../utils/imageUtils';
 
 function Notifications() {
   const [notifications, setNotifications] = useState([]);
@@ -138,7 +139,7 @@ function Notifications() {
               >
                 <div className="flex items-start space-x-4">
                   <img
-                    src={notification.sender.profilePicture || 'https://via.placeholder.com/40'}
+                    src={getProfilePictureUrl(notification.sender.profilePicture)}
                     alt={notification.sender.fullName}
                     className="w-10 h-10 rounded-full"
                   />

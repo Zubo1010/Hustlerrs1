@@ -3,148 +3,146 @@ const mongoose = require('mongoose');
 const jobSchema = new mongoose.Schema({
   title: {
     type: String,
-    required: [true, 'Job title is required.'],
-    trim: true,
+    required: [true, 'Job title is required'],
+    trim: true
   },
   description: {
     type: String,
+    default: ''
   },
   jobType: {
     type: String,
-    required: [true, 'Job type is required.'],
-    enum: ['Physical Job', 'Cleaning', 'Shop Helper', 'Online Work', 'Delivery Help', 'Event Setup', 'Tutoring', 'Packaging', 'Other'],
+    required: [true, 'Job type is required']
   },
-  location: {
-    division: {
-      type: String,
-      required: [true, 'Division is required.'],
-    },
-    district: {
-      type: String,
-      required: [true, 'District is required.'],
-    },
-    upazila: {
-      type: String,
-      required: [true, 'Upazila is required.'],
-    },
-    area: {
-      type: String,
-      required: [true, 'Area is required.'],
-    },
-    address: {
-      type: String,
-      required: [true, 'Address is required.'],
-    },
+  locationDivision: {
+    type: String,
+    required: [true, 'Division is required']
+  },
+  locationDistrict: {
+    type: String,
+    required: [true, 'District is required']
+  },
+  locationUpazila: {
+    type: String,
+    required: [true, 'Upazila is required']
+  },
+  locationArea: {
+    type: String,
+    required: [true, 'Area is required']
+  },
+  locationAddress: {
+    type: String,
+    required: [true, 'Address is required']
   },
   date: {
     type: Date,
-    required: [true, 'Date is required.'],
+    required: [true, 'Job date is required']
   },
   startTime: {
     type: String,
-    required: [true, 'Start time is required.'],
+    required: [true, 'Start time is required']
   },
   duration: {
     type: String,
-    required: [true, 'Duration is required.'],
+    required: [true, 'Duration is required']
   },
   payment: {
     method: {
       type: String,
-      required: [true, 'Payment method is required.'],
       enum: ['Fixed price', 'Hourly'],
+      required: [true, 'Payment method is required']
     },
     amount: {
       type: Number,
-      // Required if method is 'Fixed price'
+      required: function() {
+        return this.payment.method === 'Fixed price';
+      }
     },
     rate: {
-        type: Number,
-        // Required if method is 'Hourly'
+      type: Number,
+      required: function() {
+        return this.payment.method === 'Hourly';
+      }
     },
     platform: {
       type: String,
-      required: [true, 'Payment platform is required.'],
-      enum: ['Cash', 'bKash', 'Nagad'],
-    },
+      required: [true, 'Payment platform is required']
+    }
   },
   hiringType: {
     type: String,
-    required: [true, 'Hiring type is required.'],
-    enum: ['Allow Bidding', 'Instant Hire'],
+    required: [true, 'Hiring type is required']
   },
   skillRequirements: {
     type: [String],
-    default: ['No skill needed'],
+    default: ['No skill needed']
   },
   workerPreference: {
     gender: {
       type: String,
-      enum: ['Any', 'Only male', 'Only female'],
-      default: 'Any',
+      enum: ['Any', 'Male', 'Female'],
+      default: 'Any'
     },
     ageRange: {
       type: String,
-      default: 'Any',
+      default: 'Any'
     },
     studentOnly: {
       type: Boolean,
-      default: true,
+      default: true
     },
     experience: {
       type: String,
-      default: 'None',
-    },
+      default: 'None'
+    }
   },
   photos: {
     type: [String],
+    default: []
   },
   contactInfo: {
     phone: {
       type: String,
-      required: [true, 'Contact phone number is required.'],
+      required: [true, 'Contact phone is required']
     },
     email: {
       type: String,
-    },
-  },
-  status: {
-    type: String,
-    enum: ['open', 'in-progress', 'completed', 'cancelled'],
-    default: 'open',
+      default: ''
+    }
   },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true,
+    required: true
   },
   assignedTo: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    default: null,
+    default: null
   },
-  bids: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Bid',
-    }
-  ],
-  isReviewed: {
-    type: Boolean,
-    default: false,
+  status: {
+    type: String,
+    enum: ['open', 'in-progress', 'completed', 'cancelled'],
+    default: 'open'
   },
-}, {
-  timestamps: true,
-  toJSON: { virtuals: true },
-  toObject: { virtuals: true },
+  bids: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Bid'
+  }],
+  createdAt: {
+    type: Date,
+    default: Date.now
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now
+  }
 });
 
-// Virtual for applicant count
-jobSchema.virtual('applicantCount', {
-  ref: 'Bid',
-  localField: '_id',
-  foreignField: 'job',
-  count: true
+// Update timestamps before saving
+jobSchema.pre('save', function(next) {
+  this.updatedAt = Date.now();
+  next();
 });
 
 module.exports = mongoose.model('Job', jobSchema);

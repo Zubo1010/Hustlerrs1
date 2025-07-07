@@ -23,8 +23,8 @@ function Navbar() {
           {/* Navigation Links */}
           <div className="flex items-center space-x-4">
             {/* Always visible links */}
-            <Link to="/jobs/all" className="text-gray-600 hover:text-gray-900">
-              Browse Jobs
+            <Link to="/jobs" className="text-gray-600 hover:text-gray-900">
+              Find Jobs
             </Link>
 
             {user ? (
@@ -82,7 +82,7 @@ function Navbar() {
                   {/* Dropdown menu */}
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 hidden group-hover:block z-50">
                     <Link
-                      to={`/profile/${user.role === 'hustler' ? 'hustler' : 'job-giver'}`}
+                      to="/profile"
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     >
                       Profile

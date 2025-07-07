@@ -13,6 +13,27 @@ const SectionHeader = ({ icon, title }) => (
   </div>
 );
 
+// Job types available for selection
+const JOB_TYPES = [
+  'Cleaning',
+  'Moving',
+  'Delivery',
+  'Gardening',
+  'Painting',
+  'Assembly',
+  'Repair',
+  'Other'
+];
+
+// Duration options
+const DURATION_OPTIONS = ['1h', '2h', '3h', '4h', '5h', '6h', '7h', '8h', 'More than 8h'];
+
+// Experience levels
+const EXPERIENCE_LEVELS = ['None', 'Beginner', 'Intermediate', 'Expert'];
+
+// Age range options
+const AGE_RANGES = ['Any', '18-25', '26-35', '36-45', '46+'];
+
 export default function CreateJob() {
   const navigate = useNavigate();
   // const { user } = useAuth(); // Will be needed for createdBy
@@ -33,7 +54,7 @@ export default function CreateJob() {
       district: '',
       upazila: '',
       area: '',
-      address: '',
+      address: ''
     },
     date: '',
     startTime: '',
@@ -42,21 +63,21 @@ export default function CreateJob() {
       method: 'Fixed price',
       amount: '',
       rate: '',
-      platform: 'Cash',
+      platform: 'Cash'
     },
     hiringType: 'Instant Hire',
     skillRequirements: ['No skill needed'],
     workerPreference: {
       gender: 'Any',
       ageRange: 'Any',
-      studentOnly: true,
-      experience: 'None',
+      studentOnly: false,
+      experience: 'None'
     },
     photos: [],
     contactInfo: {
       phone: '',
-      email: '',
-    },
+      email: ''
+    }
   });
 
   const handleChange = (e) => {
@@ -66,127 +87,144 @@ export default function CreateJob() {
       const [parent, child] = name.split('.');
       setFormData((prev) => ({
         ...prev,
-        [parent]: { ...prev[parent], [child]: type === 'checkbox' ? checked : value },
+        [parent]: { ...prev[parent], [child]: type === 'checkbox' ? checked : value }
       }));
     } else {
       setFormData((prev) => ({
         ...prev,
-        [name]: type === 'checkbox' ? checked : value,
+        [name]: type === 'checkbox' ? checked : value
       }));
     }
   };
 
-  const handleSkillsChange = (skill) => {
-    setFormData((prev) => {
-      const currentSkills = prev.skillRequirements.filter((s) => s !== 'No skill needed');
-      let newSkills;
-      if (currentSkills.includes(skill)) {
-        newSkills = currentSkills.filter((s) => s !== skill);
-      } else {
-        newSkills = [...currentSkills, skill];
+  const handlePaymentMethodChange = (method) => {
+    setFormData((prev) => ({
+      ...prev,
+      payment: {
+        ...prev.payment,
+        method,
+        // Reset amount/rate when switching methods
+        amount: method === 'Fixed price' ? prev.payment.amount : '',
+        rate: method === 'Hourly' ? prev.payment.rate : ''
       }
-
-      if (newSkills.length === 0) {
-        newSkills.push('No skill needed');
-      }
-
-      return { ...prev, skillRequirements: newSkills };
-    });
+    }));
   };
 
-  // FIXED: Use useCallback to prevent unnecessary re-renders and add validation
   const handleLocationChange = useCallback((locationData) => {
-    console.log('Location data received:', locationData); // Debug log
-    
-    // Validate the incoming data before updating state
     if (!locationData || typeof locationData !== 'object') {
       console.warn('Invalid location data received:', locationData);
       return;
     }
 
-    // Only update if data has actually changed
     setFormData((prev) => {
       const newLocation = {
         division: locationData.division || '',
         district: locationData.district || '',
         upazila: locationData.upazila || '',
-        area: locationData.area || '',
-        address: locationData.address || '',
+        area: locationData.upazila || '', // Set area to upazila name
+        address: locationData.address || ''
       };
 
-      // Check if location actually changed to prevent unnecessary updates
       if (JSON.stringify(prev.location) === JSON.stringify(newLocation)) {
         return prev;
       }
 
       return {
         ...prev,
-        location: newLocation,
+        location: newLocation
       };
     });
   }, []);
 
-  // FIXED: Use useCallback and add debouncing to prevent rapid validation changes
   const handleLocationValidation = useCallback((isValid) => {
-    console.log('Location validation changed:', isValid); // Debug log
-    
-    // Only update if validation status actually changed
-    setIsLocationValid(prevValid => {
+    setIsLocationValid((prevValid) => {
       if (prevValid === isValid) {
-        return prevValid; // No change needed
+        return prevValid;
       }
       return isValid;
     });
   }, []);
+
+  const validateForm = () => {
+    const errors = [];
+
+    // Validate title
+    if (!formData.title.trim()) {
+      errors.push('Job title is required');
+    }
+
+    // Validate job type
+    if (!formData.jobType) {
+      errors.push('Job type is required');
+    }
+
+    // Validate location
+    const { division, district, upazila, address } = formData.location;
+    if (!division || !district || !upazila || !address) {
+      errors.push('All location fields are required');
+    }
+
+    // Validate date and time
+    if (!formData.date) {
+      errors.push('Date is required');
+    }
+    if (!formData.startTime) {
+      errors.push('Start time is required');
+    }
+
+    // Validate payment
+    if (formData.payment.method === 'Fixed price' && (!formData.payment.amount || parseFloat(formData.payment.amount) <= 0)) {
+      errors.push('Please enter a valid fixed payment amount');
+    }
+    if (formData.payment.method === 'Hourly' && (!formData.payment.rate || parseFloat(formData.payment.rate) <= 0)) {
+      errors.push('Please enter a valid hourly rate');
+    }
+
+    // Validate contact info
+    if (!formData.contactInfo.phone) {
+      errors.push('Contact phone is required');
+    }
+
+    return errors;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
-    console.log('Form data at submit:', formData); // Debug log
-
-    const { division, district, upazila, area, address } = formData.location;
-
-    // Validate location with more detailed checking
-    if (!division || !district || !upazila || !address ||
-        division.trim() === '' || district.trim() === '' || 
-        upazila.trim() === '' || address.trim() === '') {
-      setError('Please fill all required location fields completely.');
+    const validationErrors = validateForm();
+    if (validationErrors.length > 0) {
+      setError(validationErrors.join('\n'));
       setLoading(false);
       return;
     }
 
-    // Validate other required fields
-    if (!formData.title || !formData.date || !formData.startTime || !formData.contactInfo.phone) {
-      setError('Please fill all required fields.');
-      setLoading(false);
-      return;
-    }
-
-    // Validate payment amount/rate
-    if (formData.payment.method === 'Fixed price' && (!formData.payment.amount || formData.payment.amount <= 0)) {
-      setError('Please enter a valid payment amount.');
-      setLoading(false);
-      return;
-    }
-
-    if (formData.payment.method === 'Hourly' && (!formData.payment.rate || formData.payment.rate <= 0)) {
-      setError('Please enter a valid hourly rate.');
-      setLoading(false);
-      return;
-    }
+    // Clean up the form data
+    const cleanedFormData = {
+      ...formData,
+      title: formData.title.trim(),
+      payment: {
+        ...formData.payment,
+        amount: formData.payment.amount
+          ? Number(formData.payment.amount)
+          : undefined,
+        rate: formData.payment.rate
+          ? Number(formData.payment.rate)
+          : undefined,
+      }
+    };
 
     try {
-      console.log('Submitting job data:', formData); // Debug log
-      await createJob(formData);
+      await createJob(cleanedFormData);
       setSuccessMessage('Job posted successfully!');
       setTimeout(() => {
         navigate('/my-jobs');
       }, 2000);
     } catch (err) {
-      console.error('Job creation error:', err); // Debug log
-      setError(err.message || 'Failed to post job.');
+      console.error('Job creation error:', err);
+      const errorMessage = err.message || err.error || (typeof err === 'string' ? err : 'Failed to post job.');
+      setError(`Error posting job: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
@@ -201,7 +239,7 @@ export default function CreateJob() {
             onClick={() => navigate('/jobs/my-jobs')}
             className="bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-700 transition duration-300"
           >
-            👀 View Applicants
+            👀 View My Jobs
           </button>
         </div>
       </div>
@@ -217,173 +255,148 @@ export default function CreateJob() {
 
           {error && (
             <div className="mb-6 bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md" role="alert">
-              <p className="font-bold">Oops!</p>
-              <p>{error}</p>
+              <p className="font-bold">Error!</p>
+              <p className="whitespace-pre-line">{error}</p>
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-8">
-            {/* --- Job Title --- */}
-            <div className="p-6 border border-gray-200 rounded-lg">
-              <SectionHeader icon={<FiBriefcase />} title="Job Title" />
-              <p className="text-sm text-gray-500 mb-4">Give your job a short, clear title.</p>
-              <input
-                type="text"
-                name="title"
-                value={formData.title}
-                onChange={handleChange}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
-                placeholder="e.g., Need help in shop, Furniture lifting, Room cleaning"
-                required
-              />
-            </div>
-
-            {/* --- Job Description --- */}
-            <div className="p-6 border border-gray-200 rounded-lg">
-              <SectionHeader icon={<FaRegBuilding />} title="Job Description (Optional)" />
-              <p className="text-sm text-gray-500 mb-4">Describe the task clearly.</p>
-              <textarea
-                name="description"
-                rows="4"
-                value={formData.description}
-                onChange={handleChange}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
-                placeholder="Example: 'Need someone to help arrange cartons in storeroom for 3 hours.'"
-              />
-            </div>
-
-            {/* --- Job Type --- */}
-            <div className="p-6 border border-gray-200 rounded-lg">
-              <SectionHeader icon={<FiCheckSquare />} title="Job Type" />
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-                {[
-                  'Physical Job',
-                  'Cleaning',
-                  'Shop Helper',
-                  'Online Work',
-                  'Delivery Help',
-                  'Event Setup',
-                  'Tutoring',
-                  'Packaging',
-                  'Other',
-                ].map((type) => (
-                  <button
-                    type="button"
-                    key={type}
-                    onClick={() => handleChange({ target: { name: 'jobType', value: type } })}
-                    className={`p-4 rounded-lg text-center font-semibold border-2 transition-all duration-200 ${
-                      formData.jobType === type
-                        ? 'bg-green-600 text-white border-green-600'
-                        : 'bg-white text-gray-700 border-gray-200 hover:border-green-500 hover:text-green-600'
-                    }`}
-                  >
-                    {type}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* --- Location --- FIXED: Using memoized callbacks */}
-              <div className="p-6 border border-gray-200 rounded-lg">
-                <SectionHeader icon={<FiMapPin />} title="Location" />
-                <LocationSelector
-                  value={formData.location}
-                  onChange={handleLocationChange}
-                  onValidationChange={handleLocationValidation}
+            {/* Basic Job Information */}
+            <div className="space-y-4">
+              <SectionHeader icon={<FiBriefcase />} title="Basic Job Information" />
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Job Title</label>
+                <input
+                  type="text"
+                  name="title"
+                  value={formData.title}
+                  onChange={handleChange}
+                  className="input"
+                  placeholder="e.g., Need help moving furniture"
+                  required
                 />
-                {!isLocationValid && (
-                  <p className="text-red-500 text-sm mt-2">Please select a complete and valid location to proceed.</p>
-                )}
-                {/* Debug info - remove in production */}
-                <div className="mt-2 text-xs text-gray-400">
-                  Location status: Division: {formData.location.division ? '✓' : '✗'}, 
-                  District: {formData.location.district ? '✓' : '✗'}, 
-                  Upazila: {formData.location.upazila ? '✓' : '✗'}, 
-                  Area: {formData.location.area ? '✓' : '✗'}, 
-                  Address: {formData.location.address ? '✓' : '✗'}
-                  <br />
-                  Is Location Valid: {isLocationValid ? '✓' : '✗'}
-                </div>
               </div>
 
-              {/* --- Date & Time --- */}
-              <div className="p-6 border border-gray-200 rounded-lg">
-                <SectionHeader icon={<FiClock />} title="Date & Time" />
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Select Date</label>
-                    <input
-                      type="date"
-                      name="date"
-                      value={formData.date}
-                      onChange={handleChange}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
-                      required
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Start Time</label>
-                      <input
-                        type="time"
-                        name="startTime"
-                        value={formData.startTime}
-                        onChange={handleChange}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Duration</label>
-                      <select
-                        name="duration"
-                        value={formData.duration}
-                        onChange={handleChange}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
-                      >
-                        {[...Array(8).keys()].map((i) => (
-                          <option key={i} value={`${i + 1}h`}>{`${i + 1} hour(s)`}</option>
-                        ))}
-                        <option value="full_day">Full Day</option>
-                      </select>
-                    </div>
-                  </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Job Type</label>
+                <select
+                  name="jobType"
+                  value={formData.jobType}
+                  onChange={handleChange}
+                  className="input"
+                  required
+                >
+                  <option value="">Select Job Type</option>
+                  {JOB_TYPES.map((type) => (
+                    <option key={type} value={type}>{type}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Description</label>
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  rows="4"
+                  className="input"
+                  placeholder="Describe the job in detail..."
+                />
+              </div>
+            </div>
+
+            {/* Location */}
+            <div className="space-y-4">
+              <SectionHeader icon={<FiMapPin />} title="Location" />
+              <LocationSelector
+                value={formData.location}
+                onChange={handleLocationChange}
+                onValidationChange={handleLocationValidation}
+              />
+            </div>
+
+            {/* Schedule */}
+            <div className="space-y-4">
+              <SectionHeader icon={<FiClock />} title="Schedule" />
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Date</label>
+                  <input
+                    type="date"
+                    name="date"
+                    value={formData.date}
+                    onChange={handleChange}
+                    className="input"
+                    min={new Date().toISOString().split('T')[0]}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Start Time</label>
+                  <input
+                    type="time"
+                    name="startTime"
+                    value={formData.startTime}
+                    onChange={handleChange}
+                    className="input"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Duration</label>
+                  <select
+                    name="duration"
+                    value={formData.duration}
+                    onChange={handleChange}
+                    className="input"
+                    required
+                  >
+                    {DURATION_OPTIONS.map((duration) => (
+                      <option key={duration} value={duration}>{duration}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
             </div>
 
-            {/* --- Payment --- */}
-            <div className="p-6 border border-gray-200 rounded-lg">
+            {/* Payment */}
+            <div className="space-y-4">
               <SectionHeader icon={<FiDollarSign />} title="Payment" />
+              
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Payment Method</label>
-                  <div className="flex space-x-4">
-                    <label className="flex items-center">
-                      <input
-                        type="radio"
-                        name="payment.method"
-                        value="Fixed price"
-                        checked={formData.payment.method === 'Fixed price'}
-                        onChange={handleChange}
-                        className="focus:ring-green-500 h-4 w-4 text-green-600 border-gray-300"
-                      />
-                      <span className="ml-2 text-gray-700">Fixed price</span>
-                    </label>
-                    <label className="flex items-center">
-                      <input
-                        type="radio"
-                        name="payment.method"
-                        value="Hourly"
-                        checked={formData.payment.method === 'Hourly'}
-                        onChange={handleChange}
-                        className="focus:ring-green-500 h-4 w-4 text-green-600 border-gray-300"
-                      />
-                      <span className="ml-2 text-gray-700">Hourly</span>
-                    </label>
+                  <label className="block text-sm font-medium text-gray-700">Payment Method</label>
+                  <div className="flex space-x-4 mt-2">
+                    <button
+                      type="button"
+                      onClick={() => handlePaymentMethodChange('Fixed price')}
+                      className={`px-4 py-2 rounded-lg ${
+                        formData.payment.method === 'Fixed price'
+                          ? 'bg-green-600 text-white'
+                          : 'bg-gray-100 text-gray-700'
+                      }`}
+                    >
+                      Fixed Price
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handlePaymentMethodChange('Hourly')}
+                      className={`px-4 py-2 rounded-lg ${
+                        formData.payment.method === 'Hourly'
+                          ? 'bg-green-600 text-white'
+                          : 'bg-gray-100 text-gray-700'
+                      }`}
+                    >
+                      Hourly Rate
+                    </button>
                   </div>
                 </div>
+
                 {formData.payment.method === 'Fixed price' ? (
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Fixed Amount (৳)</label>
@@ -392,240 +405,151 @@ export default function CreateJob() {
                       name="payment.amount"
                       value={formData.payment.amount}
                       onChange={handleChange}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
-                      placeholder="e.g., 300"
+                      className="input"
                       min="1"
+                      placeholder="Enter fixed amount"
                       required
                     />
                   </div>
                 ) : (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Hourly Rate (৳/hr)</label>
+                    <label className="block text-sm font-medium text-gray-700">Hourly Rate (৳/hour)</label>
                     <input
                       type="number"
                       name="payment.rate"
                       value={formData.payment.rate}
                       onChange={handleChange}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
-                      placeholder="e.g., 100"
+                      className="input"
                       min="1"
+                      placeholder="Enter hourly rate"
                       required
                     />
                   </div>
                 )}
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Payment to be done via:</label>
-                  <div className="flex space-x-4">
-                    {['Cash', 'bKash', 'Nagad'].map((platform) => (
-                      <label key={platform} className="flex items-center">
-                        <input
-                          type="radio"
-                          name="payment.platform"
-                          value={platform}
-                          checked={formData.payment.platform === platform}
-                          onChange={handleChange}
-                          className="focus:ring-green-500 h-4 w-4 text-green-600 border-gray-300"
-                        />
-                        <span className="ml-2 text-gray-700">{platform}</span>
-                      </label>
-                    ))}
-                  </div>
+                  <label className="block text-sm font-medium text-gray-700">Payment Platform</label>
+                  <select
+                    name="payment.platform"
+                    value={formData.payment.platform}
+                    onChange={handleChange}
+                    className="input"
+                    required
+                  >
+                    <option value="Cash">Cash</option>
+                    <option value="bKash">bKash</option>
+                    <option value="Nagad">Nagad</option>
+                    <option value="Rocket">Rocket</option>
+                  </select>
                 </div>
               </div>
             </div>
 
-            {/* --- Hiring & Skills --- */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="p-6 border border-gray-200 rounded-lg">
-                <SectionHeader icon={<FiUser />} title="Hiring Type" />
-                <div className="space-y-2">
-                  <label className="flex items-center p-3 rounded-lg hover:bg-gray-50">
-                    <input
-                      type="radio"
-                      name="hiringType"
-                      value="Allow Bidding"
-                      checked={formData.hiringType === 'Allow Bidding'}
-                      onChange={handleChange}
-                      className="focus:ring-green-500 h-4 w-4 text-green-600 border-gray-300"
-                    />
-                    <span className="ml-3 text-gray-700">
-                      Allow Bidding <span className="text-sm text-gray-500">(students offer rates)</span>
-                    </span>
-                  </label>
-                  <label className="flex items-center p-3 rounded-lg hover:bg-gray-50">
-                    <input
-                      type="radio"
-                      name="hiringType"
-                      value="Instant Hire"
-                      checked={formData.hiringType === 'Instant Hire'}
-                      onChange={handleChange}
-                      className="focus:ring-green-500 h-4 w-4 text-green-600 border-gray-300"
-                    />
-                    <span className="ml-3 text-gray-700">
-                      Instant Hire <span className="text-sm text-gray-500">(first student accepts)</span>
-                    </span>
-                  </label>
-                </div>
-              </div>
-              <div className="p-6 border border-gray-200 rounded-lg">
-                <SectionHeader icon={<FiCheckSquare />} title="Skill Requirements" />
-                <div className="space-y-2">
-                  {['Can lift heavy items', 'Basic communication', 'Can clean/paint', 'Can use smartphone'].map((skill) => (
-                    <label key={skill} className="flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={formData.skillRequirements.includes(skill)}
-                        onChange={() => handleSkillsChange(skill)}
-                        className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
-                      />
-                      <span className="ml-3 text-gray-700">{skill}</span>
-                    </label>
-                  ))}
-                  <label className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={formData.skillRequirements.includes('No skill needed')}
-                      onChange={() => setFormData((p) => ({ ...p, skillRequirements: ['No skill needed'] }))}
-                      className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
-                    />
-                    <span className="ml-3 text-gray-700 font-semibold">No skill needed</span>
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            {/* --- Optional Preferences --- */}
-            <div className="p-6 border border-gray-200 rounded-lg">
-              <SectionHeader icon={<FiUser />} title="Worker Preference (Optional)" />
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Worker Preferences */}
+            <div className="space-y-4">
+              <SectionHeader icon={<FiUser />} title="Worker Preferences" />
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Gender</label>
+                  <label className="block text-sm font-medium text-gray-700">Gender Preference</label>
                   <select
                     name="workerPreference.gender"
                     value={formData.workerPreference.gender}
                     onChange={handleChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+                    className="input"
                   >
-                    <option>Any</option>
-                    <option>Only male</option>
-                    <option>Only female</option>
+                    <option value="Any">Any</option>
+                    <option value="Only male">Only male</option>
+                    <option value="Only female">Only female</option>
                   </select>
                 </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Age Range</label>
                   <select
                     name="workerPreference.ageRange"
                     value={formData.workerPreference.ageRange}
                     onChange={handleChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+                    className="input"
                   >
-                    <option>Any</option>
-                    <option>18-25</option>
-                    <option>25-30</option>
+                    {AGE_RANGES.map((range) => (
+                      <option key={range} value={range}>{range}</option>
+                    ))}
                   </select>
                 </div>
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Experience</label>
+                  <label className="block text-sm font-medium text-gray-700">Experience Level</label>
                   <select
                     name="workerPreference.experience"
                     value={formData.workerPreference.experience}
                     onChange={handleChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+                    className="input"
                   >
-                    <option>None</option>
-                    <option>1-2 jobs done</option>
+                    {EXPERIENCE_LEVELS.map((level) => (
+                      <option key={level} value={level}>{level}</option>
+                    ))}
                   </select>
                 </div>
-              </div>
-              <div className="mt-4">
-                <label className="flex items-center">
+
+                <div className="flex items-center">
                   <input
                     type="checkbox"
                     name="workerPreference.studentOnly"
                     checked={formData.workerPreference.studentOnly}
                     onChange={handleChange}
-                    className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                    className="h-4 w-4 text-green-600 rounded border-gray-300"
                   />
-                  <span className="ml-3 text-gray-700">Student only?</span>
-                </label>
+                  <label className="ml-2 text-sm text-gray-700">Student Only</label>
+                </div>
               </div>
             </div>
 
-            {/* --- Photos & Contact --- */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="p-6 border border-gray-200 rounded-lg">
-                <SectionHeader icon={<FiCamera />} title="Upload Photos (Optional)" />
-                <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
-                  <div className="space-y-1 text-center">
-                    <svg
-                      className="mx-auto h-12 w-12 text-gray-400"
-                      stroke="currentColor"
-                      fill="none"
-                      viewBox="0 0 48 48"
-                      aria-hidden="true"
-                    >
-                      <path
-                        d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                    <div className="flex text-sm text-gray-600">
-                      <label
-                        htmlFor="file-upload"
-                        className="relative cursor-pointer bg-white rounded-md font-medium text-green-600 hover:text-green-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-green-500"
-                      >
-                        <span>Upload a file</span>
-                        <input id="file-upload" name="photos" type="file" className="sr-only" multiple />
-                      </label>
-                      <p className="pl-1">or drag and drop</p>
-                    </div>
-                    <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
-                  </div>
+            {/* Contact Information */}
+            <div className="space-y-4">
+              <SectionHeader icon={<FiPhone />} title="Contact Information" />
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Phone Number</label>
+                  <input
+                    type="tel"
+                    name="contactInfo.phone"
+                    value={formData.contactInfo.phone}
+                    onChange={handleChange}
+                    className="input"
+                    placeholder="Enter your phone number"
+                    required
+                  />
                 </div>
-              </div>
 
-              <div className="p-6 border border-gray-200 rounded-lg">
-                <SectionHeader icon={<FiPhone />} title="Contact Info (Hidden)" />
-                <p className="text-sm text-gray-500 mb-4">This will not be shown to students directly.</p>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Phone (Required)</label>
-                    <input
-                      type="tel"
-                      name="contactInfo.phone"
-                      value={formData.contactInfo.phone}
-                      onChange={handleChange}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Email (Optional)</label>
-                    <input
-                      type="email"
-                      name="contactInfo.email"
-                      value={formData.contactInfo.email}
-                      onChange={handleChange}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
-                    />
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Email (Optional)</label>
+                  <input
+                    type="email"
+                    name="contactInfo.email"
+                    value={formData.contactInfo.email}
+                    onChange={handleChange}
+                    className="input"
+                    placeholder="Enter your email"
+                  />
                 </div>
               </div>
             </div>
 
             {/* Submit Button */}
-            <div className="pt-5">
-              <div className="flex justify-end">
-                <button
-                  type="submit"
-                  className="w-full bg-green-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-300 disabled:bg-gray-400"
-                  disabled={loading || !isLocationValid}
-                >
-                  {loading ? 'Posting Job...' : 'Post Job'}
-                </button>
-              </div>
+            <div className="pt-6">
+              <button
+                type="submit"
+                disabled={loading || !isLocationValid}
+                className={`w-full py-3 px-4 rounded-lg text-white font-semibold ${
+                  loading || !isLocationValid
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-green-600 hover:bg-green-700'
+                } transition duration-300`}
+              >
+                {loading ? 'Posting Job...' : 'Post Job'}
+              </button>
             </div>
           </form>
         </div>

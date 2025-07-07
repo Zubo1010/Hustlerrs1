@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import locationService from '../services/locationService';
 
-const LocationSelector = ({ value, onChange, onValidationChange, onLocationChange, readOnlyAddress = false }) => {
+const LocationSelector = ({ value, onChange, onValidationChange }) => {
   const [locations, setLocations] = useState([]);
   const [division, setDivision] = useState(value?.division || '');
   const [district, setDistrict] = useState(value?.district || '');
@@ -18,7 +18,7 @@ const LocationSelector = ({ value, onChange, onValidationChange, onLocationChang
       });
   }, []);
 
-  // Whenever area or address changes, notify parent about validity & value
+  // Whenever fields change, notify parent about validity
   useEffect(() => {
     const isValid =
       division.trim() !== '' &&
@@ -29,57 +29,42 @@ const LocationSelector = ({ value, onChange, onValidationChange, onLocationChang
     onValidationChange && onValidationChange(isValid);
   }, [division, district, upazila, address, onValidationChange]);
 
-  // Single useEffect to handle onChange - this replaces the problematic second useEffect
+  // Handle onChange
   useEffect(() => {
     if (onChange) {
-      const area = `${division}, ${district}, ${upazila}`;
-      onChange({
+      const locationData = {
         division,
-        district, 
+        district,
         upazila,
-        area,
-        address,
-      });
+        area: upazila, // Set area to upazila name
+        address
+      };
+
+      onChange(locationData);
     }
-    
-    // Also call onLocationChange if provided (for backward compatibility)
-    if (onLocationChange) {
-      const area = `${division}, ${district}, ${upazila}`;
-      onLocationChange({
-        division,
-        district, 
-        upazila,
-        area,
-        address,
-      });
-    }
-  }, [division, district, upazila, address, onChange, onLocationChange]);
+  }, [division, district, upazila, address, onChange]);
 
   const handleDivisionChange = (e) => {
     const newDivision = e.target.value;
     setDivision(newDivision);
     setDistrict('');
     setUpazila('');
-    // Remove triggerOnChange call - useEffect will handle it
   };
 
   const handleDistrictChange = (e) => {
     const newDistrict = e.target.value;
     setDistrict(newDistrict);
     setUpazila('');
-    // Remove triggerOnChange call - useEffect will handle it
   };
 
   const handleUpazilaChange = (e) => {
     const selectedUpazila = e.target.value;
     setUpazila(selectedUpazila);
-    // Remove direct onChange call - useEffect will handle it
   };
 
   const handleAddressChange = (e) => {
     const newAddress = e.target.value;
     setAddress(newAddress);
-    // Remove triggerOnChange call - useEffect will handle it
   };
 
   // Find current division, districts and upazilas for dropdown options
@@ -151,8 +136,7 @@ const LocationSelector = ({ value, onChange, onValidationChange, onLocationChang
           onChange={handleAddressChange}
           className="input"
           required
-          readOnly={readOnlyAddress}
-          placeholder={readOnlyAddress ? 'Address is read-only' : 'Enter your address'}
+          placeholder="Enter your address"
         />
       </div>
     </div>

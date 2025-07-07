@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import ApplicationModal from '../job/ApplicationModal';
 import { useAuth } from '../../contexts/AuthContext';
+import { getProfilePictureUrl } from '../../utils/imageUtils';
 
 export default function JobFeed() {
   const { user } = useAuth();
@@ -218,7 +219,7 @@ export default function JobFeed() {
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
         <div className="flex items-center space-x-3">
           <img
-            src={user?.profilePicture || 'https://via.placeholder.com/40'}
+            src={getProfilePictureUrl(user?.profilePicture)}
             alt={user?.fullName}
             className="w-10 h-10 rounded-full object-cover"
           />
@@ -310,13 +311,13 @@ export default function JobFeed() {
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center space-x-3">
                     <img
-                      src={job.createdBy?.profilePicture || 'https://via.placeholder.com/40'}
-                      alt={job.createdBy?.name}
+                      src={getProfilePictureUrl(job.createdBy?.profilePicture)}
+                      alt={job.createdBy?.fullName}
                       className="w-10 h-10 rounded-full object-cover"
                     />
                     <div>
-                      <h3 className="font-medium text-gray-900 text-sm">{job.createdBy?.name}</h3>
-                      <p className="text-gray-500 text-xs">{formatTimeAgo(job.createdAt)} • {job.location.area}</p>
+                      <h3 className="font-medium text-gray-900 text-sm">{job.createdBy?.fullName}</h3>
+                      <p className="text-gray-500 text-xs">{formatTimeAgo(job.createdAt)} • {job.locationArea}</p>
                     </div>
                   </div>
                   <div className="text-right">

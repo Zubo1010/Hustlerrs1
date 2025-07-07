@@ -87,7 +87,15 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     try {
       console.log('Sending registration data to backend:', userData);
+      
+      // Remove default Content-Type for FormData
+      delete axios.defaults.headers.common['Content-Type'];
+      
       const response = await axios.post('/auth/register', userData);
+      
+      // Restore default Content-Type
+      axios.defaults.headers.common['Content-Type'] = 'application/json';
+      
       const { token, user } = response.data;
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user));
@@ -95,6 +103,9 @@ export const AuthProvider = ({ children }) => {
       setUser(user);
       return { success: true, user };
     } catch (error) {
+      // Restore default Content-Type in case of error
+      axios.defaults.headers.common['Content-Type'] = 'application/json';
+      
       console.error('Registration error:', error);
       console.error('Error response:', error.response?.data);
       console.error('Error status:', error.response?.status);
@@ -131,6 +142,13 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     loginAdmin,
+    updateProfilePicture: (pictureUrl) => {
+      if (user) {
+        const updatedUser = { ...user, profilePicture: pictureUrl };
+        setUser(updatedUser);
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+      }
+    }
   };
 
   return (

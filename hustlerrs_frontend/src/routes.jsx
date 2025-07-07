@@ -16,6 +16,7 @@ import MyApplications from './pages/jobs/MyApplications';
 import JobApplications from './pages/jobs/JobApplications';
 import ProfilePage from './pages/profile/ProfilePage';
 import MyProfilePage from './pages/profile/MyProfilePage';
+import HustlerProfilePage from './pages/profile/HustlerProfilePage';
 import Messages from './pages/Messages';
 import Notifications from './pages/Notifications';
 import AllJobs from "./pages/jobs/AllJobs";
@@ -42,9 +43,10 @@ const router = createBrowserRouter([
             // Hustler Routes
             { path: 'my-applications', element: <ProtectedRoute allowedRoles={['Hustler']}><MyApplications /></ProtectedRoute> },
 
-            // Profile
+            // Profile Routes
             { path: 'profile', element: <ProtectedRoute><MyProfilePage /></ProtectedRoute> },
             { path: 'profile/:userId', element: <ProtectedRoute><ProfilePage /></ProtectedRoute> },
+            { path: 'hustler-profile/:hustlerId', element: <ProtectedRoute><HustlerProfilePage /></ProtectedRoute> },
 
             // Admin Routes
             { path: 'admin/login', element: <AdminLoginPage /> },

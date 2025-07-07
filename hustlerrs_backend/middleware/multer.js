@@ -1,5 +1,6 @@
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
 
 // Utility to sanitize username (alphanumeric only)
 function sanitizeUsername(username) {
@@ -16,14 +17,27 @@ function getFileSuffix(fieldname) {
 
 // Set up storage engine
 const storage = multer.diskStorage({
-    destination: path.resolve(__dirname, '..', 'uploads'),
+    destination: function(req, file, cb) {
+        let uploadPath;
+        if (file.fieldname === 'profilePicture') {
+            uploadPath = path.resolve(__dirname, '..', 'uploads', 'profile-pictures');
+        } else {
+            uploadPath = path.resolve(__dirname, '..', 'uploads');
+        }
+        
+        // Create directory if it doesn't exist
+        fs.mkdirSync(uploadPath, { recursive: true });
+        
+        cb(null, uploadPath);
+    },
     filename: function(req, file, cb) {
         // Get username from req.body (may be 'name' or 'fullName')
         const username = req.body.name || req.body.fullName || 'user';
         const sanitized = sanitizeUsername(username);
         const suffix = getFileSuffix(file.fieldname);
+        const timestamp = Date.now(); // Add timestamp to ensure uniqueness
         const ext = path.extname(file.originalname);
-        cb(null, `${sanitized}${suffix}${ext}`);
+        cb(null, `${sanitized}${suffix}_${timestamp}${ext}`);
     }
 });
 

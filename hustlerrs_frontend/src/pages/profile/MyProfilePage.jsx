@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { getProfile } from '../../services/profileService';
+import { getProfilePictureUrl } from '../../utils/imageUtils';
 import { Link } from 'react-router-dom';
 
 const StatCard = ({ label, value }) => (
@@ -61,11 +62,13 @@ const MyProfilePage = () => {
 
                 <div className="p-6">
                     <div className="flex flex-col md:flex-row items-center md:items-start text-center md:text-left">
-                        <img
-                            src={profilePicture ? `http://localhost:5000${profilePicture}` : 'https://via.placeholder.com/150'}
-                            alt="Profile"
-                            className="w-32 h-32 rounded-full border-4 border-white -mt-16 shadow-lg"
-                        />
+                        <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-gray-200 mx-auto mb-4">
+                            <img
+                                src={getProfilePictureUrl(profilePicture)}
+                                alt="Profile"
+                                className="w-full h-full object-cover"
+                            />
+                        </div>
                         <div className="md:ml-6 mt-4 md:mt-0">
                             <h2 className="text-xl font-semibold">{fullName}</h2>
                             <p className="text-gray-600">{location}</p>

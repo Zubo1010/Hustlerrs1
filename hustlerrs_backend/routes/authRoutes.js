@@ -5,11 +5,12 @@ const User = require('../models/Users');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const auth = require('../middleware/auth');
+const { upload } = require('../middleware/multer');
 
 
 //////////////////////////////////// Register AUTH /////////////////////////////////////////////////////////////
 
-router.post('/register', registerUser);
+router.post('/register', upload.single('profilePicture'), registerUser);
 
 
 //////////////////////////////////// LOGIN AUTH /////////////////////////////////////////////////////////////

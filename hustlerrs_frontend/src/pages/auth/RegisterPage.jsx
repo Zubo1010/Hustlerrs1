@@ -20,7 +20,8 @@ export default function RegisterPage() {
       district: '',
       upazila: '',
       address: ''
-    }
+    },
+    profilePicture: null  // Add profile picture field
   });;
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -50,6 +51,12 @@ export default function RegisterPage() {
         [name]: ''
       }));
     }
+  };
+  const handleFileChange = (e) => {
+    setFormData(prev => ({
+      ...prev,
+      [e.target.name]: e.target.files[0]
+    }));
   };
   const validateStep = (step) => {
     const newErrors = {};
@@ -94,6 +101,9 @@ export default function RegisterPage() {
           } else if (parseInt(formData.age) < 16) {
             newErrors.age = 'You must be at least 16 years old 😅';
           }
+        }
+        if (formData.role === 'Job Giver' && !formData.profilePicture) {
+          newErrors.profilePicture = 'Please upload your profile picture 😅';
         }
         break;
     }
@@ -143,6 +153,7 @@ export default function RegisterPage() {
     if (!upazila?.trim()) missingFields.push('Upazila');
     if (!address?.trim()) missingFields.push('Address');
     if (formData.role === 'Hustler' && !formData.age) missingFields.push('Age');
+    if (formData.role === 'Job Giver' && !formData.profilePicture) missingFields.push('Profile Picture');
 
     if (missingFields.length > 0) {
       setErrors({ submit: `Please fill in: ${missingFields.join(', ')}` });
@@ -157,29 +168,30 @@ export default function RegisterPage() {
       // Debug location fields before sending
       console.log('Location values before sending:', { division, district, upazila, address });
 
-      // Prepare coordinates (update if you have real geo data)
-      let coordinates = {
-        type: 'Point',
-        coordinates: [null, null],
-      };
+      // Create FormData object for file upload
+      const registerData = new FormData();
+      
+      // Add basic fields
+      registerData.append('fullName', formData.fullName.trim());
+      registerData.append('role', formData.role);
+      registerData.append('password', formData.password);
+      registerData.append(formData.contactType, formData.contactValue.trim());
+      
+      // Add location data
+      registerData.append('location[division]', division.trim());
+      registerData.append('location[district]', district.trim());
+      registerData.append('location[upazila]', upazila.trim());
+      registerData.append('location[address]', address.trim());
+      
+      // Add age for Hustlers
+      if (formData.role === 'Hustler' && formData.age) {
+        registerData.append('age', parseInt(formData.age, 10));
+      }
 
-      // Prepare registration payload
-      const registerData = {
-        fullName: formData.fullName.trim(),
-        role: formData.role,
-        password: formData.password,
-        [formData.contactType]: formData.contactValue.trim(),
-        location: {
-          division: division.trim(),
-          district: district.trim(),
-          upazila: upazila.trim(),
-          address: address.trim(),
-        },
-        coordinates,
-        ...(formData.role === 'Hustler' && formData.age && {
-          age: parseInt(formData.age, 10),
-        }),
-      };
+      // Add profile picture for Job Givers
+      if (formData.role === 'Job Giver' && formData.profilePicture) {
+        registerData.append('profilePicture', formData.profilePicture);
+      }
 
       console.log('Sending registration data:', registerData);
 
@@ -363,14 +375,26 @@ export default function RegisterPage() {
 
   const renderStep3 = () => (
     <div>
-      <div className="text-center mb-6">
-        <div className="text-3xl mb-2">📍</div>
-        <h2 className="text-2xl font-semibold text-gray-900 mb-2">Your Area</h2>
-        <p className="text-gray-600">This helps us find jobs near you</p>
-      </div>
+      <h2 className="text-2xl font-semibold text-gray-900 mb-6">Almost there! 🎉</h2>
+      
+      {formData.role === 'Job Giver' && (
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Profile Picture</label>
+          <input
+            type="file"
+            name="profilePicture"
+            onChange={handleFileChange}
+            accept="image/*"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          {errors.profilePicture && (
+            <p className="mt-1 text-sm text-red-600">{errors.profilePicture}</p>
+          )}
+        </div>
+      )}
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Select your area</label>
+      <div className="mb-6">
+        <label className="block text-sm font-medium text-gray-700 mb-2">Select Your Area</label>
         <LocationSelector
           value={formData.location}
           onChange={(newlocation) => {

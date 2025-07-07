@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { getProfilePictureUrl } from '../../utils/imageUtils';
 
 const ProfilePicture = () => {
-  const { user } = useAuth();
+  const { user, updateProfilePicture } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -63,8 +64,8 @@ const ProfilePicture = () => {
 
       if (response.ok) {
         setSuccess('Profile picture updated successfully');
-        // Update the user context with new profile picture
-        // You might want to implement this in your AuthContext
+        updateProfilePicture(data.profilePicture);
+        setPreview(''); // Clear preview since we'll show the actual uploaded image
       } else {
         setError(data.message || 'Failed to upload profile picture');
       }
@@ -95,7 +96,7 @@ const ProfilePicture = () => {
       <div className="flex flex-col items-center space-y-4">
         <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-gray-200">
           <img
-            src={preview || (user?.profilePicture ? `http://localhost:5000${user.profilePicture}` : '/default-avatar.png')}
+            src={preview || getProfilePictureUrl(user?.profilePicture)}
             alt="Profile"
             className="w-full h-full object-cover"
           />

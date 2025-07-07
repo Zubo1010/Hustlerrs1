@@ -125,7 +125,7 @@ export default function JobApplications() {
                                         </div>
                                     </div>
                                     <div className="mt-4 pt-4 border-t border-gray-200 flex flex-wrap gap-4 items-center justify-end">
-                                        <Link to={`/profile/${app.hustler?._id}`} className="btn-secondary text-sm">
+                                        <Link to={`/hustler-profile/${app.hustler?._id}`} className="btn-secondary text-sm">
                                             View Profile
                                         </Link>
                                         {app.status === 'pending' && (

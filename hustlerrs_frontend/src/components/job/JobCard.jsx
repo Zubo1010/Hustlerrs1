@@ -62,11 +62,14 @@ export default function JobCard({ job, isGiverView = false, onApplicationSuccess
           ))}
         </div>
         
-        <div className="mt-4 flex items-center justify-between border-t pt-4">
-          <div className="text-xs text-gray-500">
-            Posted: {new Date(job.createdAt).toLocaleDateString()}
+        <div className="mt-4 flex flex-col gap-4 border-t pt-4">
+          <div className="flex items-center justify-between">
+            <div className="text-xs text-gray-500">
+              Posted: {new Date(job.createdAt).toLocaleDateString()}
+            </div>
           </div>
-          <div className="flex gap-2">
+
+          <div className="flex gap-2 justify-end">
             <Link 
               to={`/job/${job._id}`}
               className="text-sm font-medium text-blue-600 hover:text-blue-800"
@@ -101,6 +104,7 @@ export default function JobCard({ job, isGiverView = false, onApplicationSuccess
           </div>
         </div>
       </div>
+
       {isModalOpen && (
         <ApplicationModal
           job={job}

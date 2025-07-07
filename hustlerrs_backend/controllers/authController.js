@@ -1,6 +1,7 @@
 const User = require('../models/Users');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const path = require('path');
 
 const registerUser = async (req, res) => {
   try {
@@ -28,6 +29,12 @@ const registerUser = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
+    // Handle profile picture for Job Giver
+    let profilePicturePath = '';
+    if (role === 'Job Giver' && req.file) {
+      profilePicturePath = `/uploads/profile-pictures/${req.file.filename}`;
+    }
+
     // create user
     const newUser = {
       fullName,
@@ -37,6 +44,7 @@ const registerUser = async (req, res) => {
       district,
       upazila,
       address,
+      profilePicture: profilePicturePath
     };
 
     if (email) newUser.email = email;
@@ -62,6 +70,7 @@ const registerUser = async (req, res) => {
         email: savedUser.email,
         phone: savedUser.phone,
         role: savedUser.role,
+        profilePicture: savedUser.profilePicture
       },
     });
   } catch (err) {

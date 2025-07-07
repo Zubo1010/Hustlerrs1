@@ -48,7 +48,7 @@ api.interceptors.response.use(
 );
 
 // Get all available jobs (for hustlers)
-export const getJobs = async (searchTerm = '', status = '', page = 1, limit = 10, lng = null, lat = null, radius = null) => {
+export const getJobs = async (searchTerm = '', status = '', page = 1, limit = 10) => {
   try {
     const params = {
       search: searchTerm,
@@ -56,13 +56,6 @@ export const getJobs = async (searchTerm = '', status = '', page = 1, limit = 10
       page,
       limit
     };
-    if (lng !== null && lat !== null) {
-      params.lng = lng;
-      params.lat = lat;
-    }
-    if (radius !== null && typeof radius === 'number') {
-      params.radius = radius;
-    }
     const response = await api.get('/jobs', { params });
     if (!response.data || !Array.isArray(response.data.jobs)) {
       throw new Error('Invalid response format from server');

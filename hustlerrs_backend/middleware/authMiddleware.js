@@ -1,62 +1,37 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/Users');
 
-const authMiddleware = (req, res, next) => {
-    // Get token from header
-    const authHeader = req.headers.authorization;
-  
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ message: 'No token provided, authorization denied' });
-    }
-  
-    const token = authHeader.split(' ')[1]; // Bearer <token>
-  
-    try {
-      // Verify token
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-  
-      // Attach user info to request object
-      req.user = decoded;
-  
-      next(); // pass control to next middleware or route
-    } catch (err) {
-      res.status(401).json({ message: 'Token is not valid' });
-    }
-  };
-  const protect = async (req, res, next) => {
+const protect = async (req, res, next) => {
     let token;
-  
-    if (
-      req.headers.authorization &&
-      req.headers.authorization.startsWith('Bearer')
-    ) {
-      try {
-        token = req.headers.authorization.split(' ')[1];
-        // console.log('Token received:', token);
-  
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        // console.log('Token decoded:', decoded);
-  
-        const user = await User.findById(decoded.userId).select('-password');
-        // console.log('User found:', user);
-  
-        if (!user) {
-          // console.error('User not found for id:', decoded.userId);
-          return res.status(401).json({ message: 'User not found' });
+
+    try {
+        if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+            // Get token from header
+            token = req.headers.authorization.split(' ')[1];
+
+            // Verify token
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            console.log('Debug - Decoded token:', decoded);
+
+            // Get user from token
+            const user = await User.findById(decoded.userId).select('-password');
+            console.log('Debug - Found user:', user);
+
+            if (!user) {
+                return res.status(401).json({ message: 'User not found' });
+            }
+
+            // Attach the full user object to the request
+            req.user = user;
+            next();
+        } else {
+            res.status(401).json({ message: 'Not authorized, no token' });
         }
-  
-        req.user = user;
-        next();
-      } catch (err) {
-        // console.error('Auth middleware error:', err);
-        return res.status(401).json({ message: 'Not authorized, token failed' });
-      }
-    } else {
-      // console.error('No token provided');
-      return res.status(401).json({ message: 'Not authorized, no token' });
+    } catch (error) {
+        console.error('Auth middleware error:', error);
+        res.status(401).json({ message: 'Not authorized', error: error.message });
     }
-  };
-  
+};
 
 const authorizeRole = (roles) => {
   return (req, res, next) => {

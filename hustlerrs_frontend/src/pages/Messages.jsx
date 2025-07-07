@@ -26,7 +26,7 @@ export default function Messages() {
 
   const showToast = (message, type = 'success') => {
     setToast({ isVisible: true, message, type });
-    setTimeout(() => setToast({ isVisible: false, message: '', type: '' }), 3000);
+    setTimeout(() => setToast({ ...toast, isVisible: false }), 3000);
   };
 
   // Fetch jobs where user is accepted hustler or job giver
@@ -34,6 +34,8 @@ export default function Messages() {
     if (!user) return;
     
     getChatJobs().then(jobs => {
+        console.log('Debug - User:', user);
+        console.log('Debug - Fetched jobs:', jobs);
         setJobChats(jobs);
         
         // Check if we need to pre-select a job from the redirect state
@@ -41,17 +43,37 @@ export default function Messages() {
         if (preselectJobId) {
             const jobToSelect = jobs.find(j => j._id === preselectJobId);
             if (jobToSelect) {
+                console.log('Debug - Preselected job:', jobToSelect);
                 setSelectedJob(jobToSelect);
             }
         }
     });
   }, [user, location.state]);
 
-  // Connect to socket and join room when job selected
   useEffect(() => {
-    if (!selectedJob) return;
-    if (!socket) socket = io(SOCKET_URL);
-    socket.emit('joinJobRoom', { jobId: selectedJob._id });
+    console.log('Debug - Selected job updated:', selectedJob);
+    console.log('Debug - Current user:', user);
+    if (selectedJob) {
+      console.log('Debug - Conditions:', {
+        isUserJobCreator: user?.id === selectedJob?.createdBy?._id,
+        jobStatus: selectedJob?.status === 'in-progress',
+        notReviewed: !selectedJob?.isReviewed,
+        userId: user?.id,
+        creatorId: selectedJob?.createdBy?._id
+      });
+    }
+  }, [selectedJob, user]);
+
+  // Connect to socket and join rooms when component mounts
+  useEffect(() => {
+    if (!user) return;
+    
+    if (!socket) {
+      socket = io(SOCKET_URL);
+      
+      // Join user's personal room
+      socket.emit('joinUserRoom', { userId: user.id });
+    }
 
     socket.on('newMessage', (msg) => {
       if (!selectedJob || msg.job !== selectedJob._id) {
@@ -63,9 +85,42 @@ export default function Messages() {
       }
     });
 
+    // Add listener for chat removal
+    socket.on('chatRemoved', ({ jobId, message }) => {
+      console.log('Debug - Chat removed for job:', jobId);
+      setJobChats(prev => prev.filter(j => j._id !== jobId));
+      if (selectedJob && selectedJob._id === jobId) {
+        setSelectedJob(null);
+        setMessages([]);
+        showToast(message || 'This chat has been closed as the job is completed', 'info');
+      }
+    });
+
+    // Add listener for job completion
+    socket.on('jobCompleted', ({ jobId, message }) => {
+      console.log('Debug - Job completed:', jobId);
+      setJobChats(prev => prev.map(job => 
+        job._id === jobId 
+          ? { ...job, status: 'completed', isReviewed: true }
+          : job
+      ));
+      if (selectedJob && selectedJob._id === jobId) {
+        setSelectedJob(prev => ({ ...prev, status: 'completed', isReviewed: true }));
+        showToast(message, 'success');
+      }
+    });
+
     return () => {
       socket.off('newMessage');
+      socket.off('chatRemoved');
+      socket.off('jobCompleted');
     };
+  }, [user]);
+
+  // Join job room when a job is selected
+  useEffect(() => {
+    if (!socket || !selectedJob) return;
+    socket.emit('joinJobRoom', { jobId: selectedJob._id });
   }, [selectedJob]);
 
   // Fetch messages for selected job
@@ -86,34 +141,77 @@ export default function Messages() {
   const handleSend = async (e) => {
     e.preventDefault();
     if (!newMessage.trim()) return;
-    const receiverId = user._id === selectedJob.createdBy._id ? selectedJob.acceptedHustler._id : selectedJob.createdBy._id;
+    const receiverId = user._id === selectedJob.createdBy._id ? selectedJob.assignedTo._id : selectedJob.createdBy._id;
     const msg = await sendMessage(selectedJob._id, newMessage, receiverId);
     socket.emit('sendMessage', { ...msg, jobId: selectedJob._id });
     setNewMessage('');
   };
 
   const handleReviewSubmit = async (reviewData) => {
-    if (!selectedJob) return;
-
-    setIsSubmittingReview(true);
     try {
-      await submitReview(selectedJob._id, reviewData);
-      showToast('Review submitted! Job completed.', 'success');
+      setIsSubmittingReview(true);
+      console.log('Debug - Selected job before review:', selectedJob);
+      console.log('Debug - Review data:', reviewData);
       
-      // Close modal and remove job from UI
+      const response = await submitReview(selectedJob._id, reviewData);
+      console.log('Debug - Review submission response:', response);
+
+      // Update the job status locally
+      setSelectedJob(prev => ({
+        ...prev,
+        status: 'completed',
+        isReviewed: true
+      }));
+
+      // Close the modal
       setIsReviewModalOpen(false);
-      setJobChats(prev => prev.filter(j => j._id !== selectedJob._id));
-      setSelectedJob(null);
-    } catch (err) {
-      console.error('Error submitting review:', err);
-      showToast(err.response?.data?.message || 'Failed to submit review.', 'error');
+
+      // Show success message
+      showToast('Review submitted successfully!', 'success');
+    } catch (error) {
+      console.error('Error submitting review:', error);
+      console.log('Debug - Full error object:', error.response?.data);
+      showToast(error.response?.data?.message || 'Error submitting review', 'error');
     } finally {
       setIsSubmittingReview(false);
     }
   };
 
+  const isJobCreator = user && selectedJob && user.id === selectedJob.createdBy._id;
+  const canMarkAsDone = isJobCreator && selectedJob?.status === 'in-progress' && !selectedJob?.isReviewed;
+
+  useEffect(() => {
+    if (selectedJob) {
+      console.log('Debug - Selected job details:', {
+        id: selectedJob._id,
+        title: selectedJob.title,
+        status: selectedJob.status,
+        isReviewed: selectedJob.isReviewed,
+        createdBy: selectedJob.createdBy,
+        acceptedHustler: selectedJob.acceptedHustler
+      });
+    }
+  }, [selectedJob]);
+
   return (
     <div className="flex h-screen bg-gray-100">
+      {/* Debug info */}
+      {import.meta.env.DEV && (
+        <div className="fixed top-0 right-0 bg-black bg-opacity-75 text-white p-2 text-xs">
+          <pre>
+            {JSON.stringify({
+              userRole: user?.role,
+              userId: user?.id,
+              jobCreatorId: selectedJob?.createdBy?._id,
+              jobStatus: selectedJob?.status,
+              isReviewed: selectedJob?.isReviewed,
+              isJobCreator,
+              canMarkAsDone,
+              idsMatch: user?.id === selectedJob?.createdBy?._id
+            }, null, 2)}
+          </pre>
+        </div>
+      )}
       <Toast 
         isVisible={toast.isVisible} 
         message={toast.message} 
@@ -129,7 +227,10 @@ export default function Messages() {
             className={`p-4 cursor-pointer hover:bg-gray-100 ${
               selectedJob && selectedJob._id === job._id ? 'bg-gray-200' : ''
             }`}
-            onClick={() => setSelectedJob(job)}
+            onClick={() => {
+              console.log('Selected job:', job); // Debug log
+              setSelectedJob(job);
+            }}
           >
             <div className="font-semibold flex items-center">
               {job.title}
@@ -138,7 +239,10 @@ export default function Messages() {
               )}
             </div>
             <div className="text-sm text-gray-600">
-              With: {user._id === job.createdBy._id ? job.acceptedHustler.name : job.createdBy.name}
+              With: {user._id === job.createdBy._id ? job.assignedTo?.fullName : job.createdBy?.fullName}
+            </div>
+            <div className="text-xs text-gray-500">
+              Status: {job.status}
             </div>
           </div>
         ))}
@@ -146,14 +250,21 @@ export default function Messages() {
       <div className="flex-1 flex flex-col">
         {selectedJob ? (
           <>
-            <div className="border-b p-4 font-bold bg-white flex justify-between items-center">
-              <span>Chat for: {selectedJob.title}</span>
-              {user && user._id === selectedJob.createdBy._id && !selectedJob.isReviewed && (
+            <div className="border-b p-4 bg-white flex justify-between items-center">
+              <div>
+                <div className="font-bold">{selectedJob.title}</div>
+                <div className="text-sm text-gray-600">
+                  Status: {selectedJob.status}
+                  {canMarkAsDone && ' (You can mark this job as done)'}
+                </div>
+              </div>
+              {canMarkAsDone && (
                 <button
                   onClick={() => setIsReviewModalOpen(true)}
-                  className="px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-md hover:bg-red-700"
+                  className="px-4 py-2 text-sm font-semibold text-white bg-green-600 rounded-md hover:bg-green-700 transition-colors"
+                  disabled={isSubmittingReview}
                 >
-                  Mark as Done & Review
+                  {isSubmittingReview ? 'Submitting...' : 'Mark Job as Done'}
                 </button>
               )}
             </div>
@@ -167,11 +278,10 @@ export default function Messages() {
                     <div key={msg._id} className={`mb-2 flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                       <div className={`max-w-xs ${isMe ? 'text-right' : 'text-left'}`}>
                         <div className={`text-xs font-semibold mb-1 ${isMe ? 'text-blue-700' : 'text-gray-700'}`}>
-                          {msg.sender.name}
+                          {msg.sender.fullName}
                         </div>
-                        <div className={`rounded px-3 py-2 ${isMe ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-900'}`}>
-                          <div className="text-sm">{msg.text}</div>
-                          <div className="text-xs opacity-60 mt-1">{new Date(msg.createdAt).toLocaleTimeString()}</div>
+                        <div className={`rounded-lg p-3 ${isMe ? 'bg-blue-600 text-white' : 'bg-white'}`}>
+                          {msg.text}
                         </div>
                       </div>
                     </div>
@@ -180,29 +290,38 @@ export default function Messages() {
               )}
               <div ref={messagesEndRef} />
             </div>
-            <form onSubmit={handleSend} className="p-4 border-t flex">
-              <input
-                className="flex-1 border rounded px-3 py-2 mr-2"
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                placeholder="Type a message..."
-              />
-              <button className="bg-blue-600 text-white px-4 py-2 rounded" type="submit">
-                Send
-              </button>
+            <form onSubmit={handleSend} className="p-4 bg-white border-t">
+              <div className="flex">
+                <input
+                  type="text"
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  placeholder="Type a message..."
+                  className="flex-1 p-2 border rounded-l focus:outline-none focus:border-blue-500"
+                />
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-r hover:bg-blue-700 transition-colors"
+                >
+                  Send
+                </button>
+              </div>
             </form>
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center text-gray-500">Select a chat to start messaging</div>
+          <div className="flex-1 flex items-center justify-center text-gray-500">
+            Select a chat to start messaging
+          </div>
         )}
       </div>
-      
-      <ReviewModal 
-        isOpen={isReviewModalOpen}
-        onClose={() => setIsReviewModalOpen(false)}
-        onSubmit={handleReviewSubmit}
-        isSubmitting={isSubmittingReview}
-      />
+      {isReviewModalOpen && (
+        <ReviewModal
+          isOpen={isReviewModalOpen}
+          onClose={() => setIsReviewModalOpen(false)}
+          onSubmit={handleReviewSubmit}
+          isSubmitting={isSubmittingReview}
+        />
+      )}
     </div>
   );
 }

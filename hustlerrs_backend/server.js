@@ -26,8 +26,13 @@ Sentry.init({
 });
 
 const uploadsDir = path.join(__dirname, 'uploads');
+const profilePicsDir = path.join(uploadsDir, 'profile-pictures');
+
 if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir);
+}
+if (!fs.existsSync(profilePicsDir)) {
+    fs.mkdirSync(profilePicsDir);
 }
 
 app.use(cors({
@@ -65,7 +70,7 @@ app.use('/api/utils', utilsRoutes);
 
 const io = new Server(server, {
   cors: {
-    origin: 'http://localhost:5173',
+    origin: process.env.CLIENT_URL || 'http://localhost:5173',
     methods: ['GET', 'POST']
   }
 });
@@ -77,6 +82,24 @@ io.on('connection', (socket) => {
 
   socket.on('sendMessage', (data) => {
     io.to(`job_${data.jobId}`).emit('newMessage', data);
+  });
+
+  socket.on('jobCompleted', ({ jobId, reviewerName, hustlerId }) => {
+    // Emit to the specific job room
+    io.to(`job_${jobId}`).emit('jobReviewed', {
+      jobId,
+      reviewerName
+    });
+    
+    // Also emit to hustler's personal room
+    io.to(`user_${hustlerId}`).emit('jobReviewed', {
+      jobId,
+      reviewerName
+    });
+  });
+
+  socket.on('disconnect', () => {
+    console.log('Client disconnected');
   });
 });
 

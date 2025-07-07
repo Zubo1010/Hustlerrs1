@@ -12,6 +12,7 @@ const {getLocationData} = require('../services/locationService')
  * Transforms a raw job document from the database into the format expected by the frontend.
  * Also checks if the current user (if any) has applied for the job.
  * @param {object} job - The raw job document from Mongoose.
+ * 
  * @param {string|null} userId - The ID of the current user (or null for guests).
  * @returns {object} The transformed job object.
  */
@@ -67,33 +68,94 @@ const transformJobData = (job, userId) => {
 
 // Create Job
 const createJob = asyncHandler(async (req, res) => {
-    // Check user role
-    if (req.user.role !== 'Job Giver') {
-        res.status(403);
-        throw new Error('Only job givers can create jobs.');
+    try {
+        // Debug: print the incoming request body
+        console.log('REQ.BODY:', JSON.stringify(req.body, null, 2));
+        
+        // Check user role
+        if (req.user.role !== 'Job Giver') {
+            return res.status(403).json({ message: 'Only job givers can create jobs.' });
+        }
+
+        const { title, jobType, location, date, startTime, duration, payment, hiringType, contactInfo } = req.body;
+
+        // Validate required fields
+        if (!title || !jobType || !location?.division || !location?.district || !location?.upazila || !location?.address || !location?.area || !date || !startTime || !duration || !payment?.method || !payment?.platform || !hiringType || !contactInfo?.phone) {
+            return res.status(400).json({ message: 'Please provide all required job fields.' });
+        }
+
+        // Validate payment data
+        if (payment.method === 'Fixed price' && (!payment.amount || payment.amount <= 0)) {
+            return res.status(400).json({ message: 'Fixed price payment requires a valid amount.' });
+        }
+        if (payment.method === 'Hourly' && (!payment.rate || payment.rate <= 0)) {
+            return res.status(400).json({ message: 'Hourly payment requires a valid rate.' });
+        }
+
+        // Validate location against location_db.json
+        if (!validateLocation(location.division, location.district, location.upazila)) {
+            return res.status(400).json({ message: 'Invalid division, district, or upazila provided.' });
+        }
+
+        // Create new job instance with properly structured data
+        const jobData = {
+            title,
+            description: req.body.description || '',
+            jobType,
+            // Flatten location fields
+            locationDivision: location.division,
+            locationDistrict: location.district,
+            locationUpazila: location.upazila,
+            locationArea: location.area,
+            locationAddress: location.address,
+            date: new Date(date),
+            startTime,
+            duration,
+            payment: {
+                method: payment.method,
+                amount: payment.method === 'Fixed price' ? payment.amount : undefined,
+                rate: payment.method === 'Hourly' ? payment.rate : undefined,
+                platform: payment.platform
+            },
+            hiringType,
+            skillRequirements: req.body.skillRequirements || ['No skill needed'],
+            workerPreference: {
+                gender: req.body.workerPreference?.gender || 'Any',
+                ageRange: req.body.workerPreference?.ageRange || 'Any',
+                studentOnly: req.body.workerPreference?.studentOnly ?? true,
+                experience: req.body.workerPreference?.experience || 'None'
+            },
+            photos: req.body.photos || [],
+            contactInfo: {
+                phone: contactInfo.phone,
+                email: contactInfo.email || ''
+            },
+            createdBy: req.user._id,
+            status: 'open'
+        };
+
+        const newJob = new Job(jobData);
+
+        // Validate the job data
+        const validationError = newJob.validateSync();
+        if (validationError) {
+            console.error('Validation Error:', validationError);
+            return res.status(400).json({ 
+                message: 'Validation failed', 
+                errors: Object.values(validationError.errors).map(err => err.message)
+            });
+        }
+
+        // Save the job
+        await newJob.save();
+        res.status(201).json({ message: 'Job created successfully!', job: newJob });
+    } catch (error) {
+        console.error('Error creating job:', error);
+        res.status(500).json({ 
+            message: 'Failed to create job', 
+            error: error.message 
+        });
     }
-
-    const { title, jobType, location, date, startTime, duration, payment, hiringType, contactInfo } = req.body;
-
-    if (!title || !jobType || !location?.division || !location?.district || !location?.upazila || !location?.address || !location?.area || !date || !startTime || !duration || !payment || !hiringType || !contactInfo?.phone) {
-        return res.status(400).json({ message: 'Please provide all required job fields including location (division, district, upazila, address, area).' });
-    }
-// Validate location against location_db.json
-if (!validateLocation(location.division, location.district, location.upazila)) {
-    return res.status(400).json({ message: 'Invalid division, district, or upazila provided.' });
-}
-
-    // Prepare job data, including coordinates if provided
-    const jobData = {
-        ...req.body,
-        createdBy: req.user._id,
-        status: 'open'
-    };
-
-
-    const newJob = new Job(jobData);
-    await newJob.save();
-    res.status(201).json({ message: 'Job created successfully!', job: newJob });
 });
 
 // Get all bids (applications) for a job — only for the job creator
@@ -149,93 +211,116 @@ const validateLocation = (division, district, upazila) => {
 
 // Generic Job Fetching Logic
 const getJobs = asyncHandler(async (req, res, isMyJobs = false) => {
-    const { 
-        sort = 'newest', 
-        area = '', 
-        maxPay, 
-        date, 
-        noSkillNeeded, 
-        jobType,
-        page = 1,
-        limit = 10,
-        upazila,
-        district,
-        division
-    } = req.query;
+    try {
+        const { 
+            sort = 'newest', 
+            area = '', 
+            maxPay, 
+            date, 
+            noSkillNeeded, 
+            jobType,
+            page = 1,
+            limit = 10,
+            upazila,
+            district,
+            division,
+            search = ''
+        } = req.query;
 
-    const query = {};
+        const query = {};
 
-    // Base query for 'My Jobs'
-    if (isMyJobs) {
-        if (req.user.role !== 'Job Giver') {
-            return res.status(403).json({ message: 'Access denied.' });
+        // Base query for 'My Jobs'
+        if (isMyJobs) {
+            if (req.user.role !== 'Job Giver') {
+                return res.status(403).json({ message: 'Access denied.' });
+            }
+            query.createdBy = req.user._id;
+        } else {
+            // Only show 'open' jobs in the general listing
+            query.status = 'open';
         }
-        query.createdBy = req.user._id;
-    } else {
-        // Only show 'open' jobs in the general listing
-        query.status = 'open';
-    }
 
-    // --- Filtering ---
-    if (upazila) {
-        query['location.upazila'] = upazila;
-    } else if (district) {
-        query['location.district'] = district;
-    } else if (division) {
-        query['location.division'] = division;
-    }
-    if (area) query['location.area'] = area;
-    if (jobType) query.jobType = { $in: jobType.split(',') };
-    if (maxPay) query['payment.amount'] = { $lte: parseInt(maxPay, 10) };
-    if (noSkillNeeded === 'true') query.skillRequirements = 'No skill needed';
-
-    if (date) {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        let dateQuery;
-        if (date === 'today') dateQuery = { $gte: today, $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000) };
-        if (date === 'tomorrow') {
-            const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
-            dateQuery = { $gte: tomorrow, $lt: new Date(tomorrow.getTime() + 24 * 60 * 60 * 1000) };
+        // Add text search if provided
+        if (search) {
+            query.$or = [
+                { title: { $regex: search, $options: 'i' } },
+                { description: { $regex: search, $options: 'i' } },
+                { jobType: { $regex: search, $options: 'i' } }
+            ];
         }
-        if (date === 'this_week') {
-            const endOfWeek = new Date(today);
-            endOfWeek.setDate(today.getDate() + (6 - today.getDay()) + 1);
-            dateQuery = { $gte: today, $lt: endOfWeek };
+
+        // Add location filters - updated to match the flattened schema
+        if (division) {
+            query.locationDivision = division;
         }
-        if(dateQuery) query.date = dateQuery;
+        if (district) {
+            query.locationDistrict = district;
+        }
+        if (upazila) {
+            query.locationUpazila = upazila;
+        }
+        if (area) {
+            query.locationArea = area;
+        }
+
+        // Add other filters
+        if (jobType) query.jobType = { $in: jobType.split(',') };
+        if (maxPay) {
+            query.$or = [
+                { 'payment.amount': { $lte: parseInt(maxPay, 10) } },
+                { 'payment.rate': { $lte: parseInt(maxPay, 10) } }
+            ];
+        }
+        if (date) query.date = { $gte: new Date(date) };
+        if (noSkillNeeded === 'true') {
+            query.skillRequirements = { $in: ['No skill needed'] };
+        }
+
+        // --- Sorting ---
+        const sortOptions = {};
+        if (sort === 'highest_pay') {
+            sortOptions['payment.amount'] = -1;
+            sortOptions['payment.rate'] = -1;
+        } else { // 'newest' is default
+            sortOptions.createdAt = -1;
+        }
+
+        // --- Execution ---
+        const skip = (parseInt(page) - 1) * parseInt(limit);
+        const jobs = await Job.find(query)
+            .populate('createdBy', 'fullName email')
+            .populate('bids')
+            .populate({ 
+                path: 'bids', 
+                select: 'hustler status price notes createdAt',
+                populate: { 
+                    path: 'hustler', 
+                    select: '_id fullName email profilePicture' 
+                } 
+            })
+            .sort(sortOptions)
+            .skip(skip)
+            .limit(parseInt(limit));
+
+        const totalJobs = await Job.countDocuments(query);
+
+        // --- Transformation ---
+        const userId = req.user ? req.user._id : null;
+        const transformedJobs = jobs.map(job => transformJobData(job, userId));
+
+        res.json({
+            jobs: transformedJobs,
+            total: totalJobs,
+            page: parseInt(page),
+            pages: Math.ceil(totalJobs / parseInt(limit)),
+        });
+    } catch (error) {
+        console.error('Error in getJobs:', error);
+        res.status(500).json({ 
+            message: 'Failed to fetch jobs', 
+            error: error.message 
+        });
     }
-
-    // --- Sorting ---
-    const sortOptions = {};
-    if (sort === 'highest_pay') {
-        sortOptions['payment.amount'] = -1;
-        sortOptions['payment.rate'] = -1;
-    } else { // 'newest' is default
-        sortOptions.createdAt = -1;
-    }
-
-    // --- Execution ---
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-    const jobs = await Job.find(query)
-        .populate('createdBy', 'name')
-        .populate('bids')
-        .populate({ path: 'bids', select: 'hustler', populate: { path: 'hustler', select: '_id' } })
-        .sort(sortOptions)
-        .skip(skip)
-        .limit(parseInt(limit));
-    const totalJobs = await Job.countDocuments(query);
-
-    // --- Transformation ---
-    const userId = req.user ? req.user._id : null;
-    const transformedJobs = jobs.map(job => transformJobData(job, userId));
-
-    res.json({
-        jobs: transformedJobs,
-        total: totalJobs,
-        page: parseInt(page),
-        pages: Math.ceil(totalJobs / parseInt(limit)),
-    });
 });
 
 /**
@@ -422,6 +507,44 @@ const rejectBid = asyncHandler(async (req, res) => {
     res.json({ message: 'Bid rejected.', bid });
 });
 
+const acceptJob = asyncHandler(async (req, res) => {
+    const { jobId } = req.params;
+    console.log('Debug - Accepting job:', jobId);
+    console.log('Debug - User:', req.user._id);
+
+    const job = await Job.findById(jobId);
+    
+    if (!job) {
+        return res.status(404).json({ message: 'Job not found' });
+    }
+
+    if (job.status !== 'pending') {
+        return res.status(400).json({ message: 'Job is not available for acceptance' });
+    }
+
+    // Update job status and assign hustler
+    job.status = 'in-progress';
+    job.acceptedHustler = req.user._id;
+    await job.save();
+
+    console.log('Debug - Updated job:', job);
+
+    // Create notification for job creator
+    await createNotification({
+        recipient: job.createdBy,
+        type: 'JOB_ACCEPTED',
+        message: `Your job "${job.title}" has been accepted by a hustler`,
+        relatedJob: jobId
+    });
+
+    res.json({ 
+        message: 'Job accepted successfully',
+        job: await Job.findById(jobId)
+            .populate('createdBy', 'fullName email')
+            .populate('acceptedHustler', 'fullName email')
+    });
+});
+
 module.exports = {
     createJob,
     getAllJobs,
@@ -433,4 +556,5 @@ module.exports = {
     acceptBid,
     rejectBid,
     getJobApplications,
+    acceptJob
 };
